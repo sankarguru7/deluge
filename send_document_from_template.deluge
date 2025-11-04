@@ -1,0 +1,81 @@
+// This script sends a document for signature using a Zoho Sign template,
+// following the API documentation at:
+// https://www.zoho.com/sign/api/template-managment/send-documents-using-template.html
+
+// 1. --- Configuration ---
+// Replace with your actual Zoho Sign template ID.
+templateId = "2000000492177"; // Example ID, replace with your actual template ID.
+
+// Replace with the name of your Zoho Sign connection in Zoho CRM.
+connectionName = "zohosignconnection";
+
+
+// 2. --- Construct the Request Payload ---
+// This main map will be converted into the 'data' JSON object.
+data_map = Map();
+templates_map = Map();
+
+// -- Field Data --
+// Add values for any pre-fill fields in your template.
+field_text_data_map = Map();
+// field_text_data_map.put("Name", "John Smith"); // Example: field_label, value
+// field_text_data_map.put("Company", "Zoho Corp");
+field_boolean_data_map = Map();
+field_date_data_map = Map();
+
+field_data_map = Map();
+field_data_map.put("field_text_data", field_text_data_map);
+field_data_map.put("field_boolean_data", field_boolean_data_map);
+field_data_map.put("field_date_data", field_date_data_map);
+templates_map.put("field_data", field_data_map);
+
+// -- Recipient Actions --
+// Define the recipients who need to sign. This must match the roles in the template.
+actions_list = List();
+action1 = Map();
+action1.put("action_id", "2000000468052"); // IMPORTANT: Get this from the template details.
+action1.put("recipient_name", "Alex James");
+action1.put("recipient_email", "alex.james@securesign24x7.com");
+action1.put("action_type", "SIGN");
+action1.put("role", "Signer 1"); // IMPORTANT: This must match the role in the template.
+action1.put("verify_recipient", "true");
+action1.put("verification_type", "EMAIL");
+actions_list.add(action1);
+
+// Add more actions if your template has multiple recipients.
+templates_map.put("actions", actions_list);
+
+// -- Notes --
+templates_map.put("notes", "Please sign this document at your earliest convenience.");
+
+// Finalize the 'data' object.
+data_map.put("templates", templates_map);
+
+
+// 3. --- Prepare for API Call ---
+// Construct the full API endpoint URL.
+endpoint_url = "https://sign.zoho.com/api/v1/templates/" + templateId + "/createdocument";
+
+// Prepare the parameters for the x-www-form-urlencoded request.
+// The 'data' parameter must be a JSON string.
+request_params = Map();
+request_params.put("data", data_map.toString());
+request_params.put("is_quicksend", "true");
+
+
+// 4. --- Make the API Call ---
+// Use invokeurl to make the POST request.
+response = invokeurl
+[
+	url :endpoint_url
+	type :POST
+	parameters:request_params
+	connection:connectionName
+];
+
+// 5. --- Log the Response ---
+// Log the response from the Zoho Sign API for debugging purposes.
+info response;
+
+// Return the response.
+return response;
