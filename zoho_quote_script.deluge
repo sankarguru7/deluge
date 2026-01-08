@@ -1,0 +1,166 @@
+string standalone.Quoteattachmentinprospect1tsg(String QuoteID)
+{
+recordId = QuoteID;
+// quote = zoho.crm.getRecordById("Quotes",recordId);
+get_quote = invokeurl
+[
+	url :"https://www.zohoapis.com/crm/v8/Quotes/" + recordId
+	type :GET
+	connection:"z_crm"
+];
+// ----------------------------
+// STEP 2: Build Line Items List
+// ----------------------------
+if(get_quote.contains("data") == true)
+{
+	quote = get_quote.get("data").get(0);
+	lineItems = list();
+	for each  item in quote.get("Quoted_Items")
+	{
+		itemMap = Map();
+		//------------------------------------------
+		// PRODUCT NAME
+		//------------------------------------------
+		prodData = item.get("Product_Name").get("name");
+		leftHTML = "<div style='font-family:Arial; font-size:7pt; line-height:1.5;'>";
+		leftHTML = leftHTML + "<div style='font-weight:700; font-size:10pt; margin-bottom:16px;'>" + prodData + "</div>";
+		qtyHTML = "<div style='font-family:Arial; font-size:9pt; line-height:1.4;'>";
+		// Product quantity first
+		qtyHTML = qtyHTML + "<div style='font-weight:700;font-size:9pt;'>" + item.get("Quantity") + "</div>";
+		//------------------------------------------
+		// SPECIFICATIONS TABLE
+		//------------------------------------------
+		// Note: The alignment for specifications is fragile. It uses fixed-height spacer divs in the quantity column.
+		// This may misalign if the specification text on the left wraps to multiple lines.
+		specMap = item.get("Product_Specification");
+		if(specMap != null)
+		{
+			mapdata = specMap.toMap();
+			specKeys = mapdata.keys();
+			leftHTML = leftHTML + "<table style='width:200px;font-size:7pt;'>";
+			for each  field in specKeys
+			{
+				value = ifnull(mapdata.get(field),"");
+				leftHTML = leftHTML + "<tr style=' line-height:0.5;'>" + "<td style='padding:2px; font-weight:bold; white-space:nowrap;'>" + field + "</td>" + "<td style='padding:2px;width:100px;white-space: normal'>" + value + "</td>" + "</tr>";
+				qtyHTML = qtyHTML + "<div style='height:12px;'>&nbsp;</div>";
+			}
+			leftHTML = leftHTML + "</table>";
+		}
+		//------------------------------------------
+		// HSN (Shown only ONCE)
+		//------------------------------------------
+		productId = item.get("Product_Name").get("id");
+		hsnData = "";
+		productInfo = zoho.crm.getRecordById("Products",productId);
+		if(productInfo.containKey("HSN") && productInfo.get("HSN") != null)
+		{
+			hsnData = productInfo.get("HSN").get("name");
+		}
+		//------------------------------------------
+		// ACCESSORIES FETCH
+		//------------------------------------------
+		accessory_ids = List();
+		accessory_details = List();
+		linking = invokeurl
+		[
+			url :"https://www.zohoapis.com/crm/v3/Products/" + productId + "/Accessories17?fields=Product_Accessories"
+			type :GET
+			connection:"z_crm"
+		];
+		if(linking != null && linking != "" && linking.containKey("data"))
+		{
+			for each  rec in linking.get("data")
+			{
+				if(rec.get("Product_Accessories") != null)
+				{
+					accessory_ids.add(rec.get("Product_Accessories").get("id"));
+				}
+			}
+		}
+		for each  accId in accessory_ids
+		{
+			acc = invokeurl
+			[
+				url :"https://www.zohoapis.com/crm/v3/Accessories/" + accId
+				type :GET
+				connection:"z_crm"
+			];
+			if(acc.containKey("data"))
+			{
+				accessory_details.add(acc.get("data").get(0));
+			}
+		}
+		//------------------------------------------
+		// ACCESSORIES LIST & QTY (UNIFIED)
+		//------------------------------------------
+		if(accessory_details.size() > 0)
+		{
+			leftHTML = leftHTML + "<div style='font-weight:700; margin-top:8px;font-size:9pt;'>Accessories</div>";
+			qtyHTML = qtyHTML + "<div style='height:21px;'>&nbsp;</div>";
+			for each  acc in accessory_details
+			{
+				accName = ifnull(acc.get("Name"),"");
+				accQty = ifnull(acc.get("Quantity"),"1");
+				leftHTML = leftHTML + "<div style='margin-left:2px;font-size:9pt;'>" + accName + "</div>";
+				qtyHTML = qtyHTML + "<div style='font-weight:700;font-size:9pt;'>" + accQty + "</div>";
+			}
+		}
+		leftHTML = leftHTML + "</div>";
+		qtyHTML = qtyHTML + "</div>";
+		//------------------------------------------
+		// MAP TO LINE ITEMS
+		//------------------------------------------
+		itemMap.put("Line_Items.Item",leftHTML);
+		hsnda = "<div style='font-weight:700; font-size:10pt; vertical-align:top; margin-top:0px;'>" + hsnData + "</div>";
+		itemMap.put("Line_Items.HSN",hsnda);
+		itemMap.put("Line_Items.Quantity",qtyHTML);
+		totalData = "<div style='font-weight:700; font-size:10pt; margin-bottom:6px; vertical-align:top; margin-top:0px;'>" + item.get("Total") + "</div>";
+		itemMap.put("Line_Items.Total",totalData);
+		lineItems.add(itemMap);
+	}
+	// ----------------------------
+	// STEP 3: Build Final Merge Map
+	// ----------------------------
+	mergeData = Map();
+	// Main Fields
+	mergeData.put("Account_Name",quote.get("Account_Name").get("name"));
+	mergeData.put("Total_Price",quote.get("Grand_Total"));
+	mergeData.put("Billing_Street",quote.get("Billing_Street"));
+	mergeData.put("street2",quote.get("Billing_Street_Line_1"));
+	mergeData.put("Billing_City",quote.get("Billing_City"));
+	mergeData.put("Billing_State",quote.get("Billing_State"));
+	mergeData.put("Billing_country",quote.get("Billing_Country"));
+	mergeData.put("GST_IN",quote.get("Account_GSTIN"));
+	mergeData.put("Customer_GSTIN",quote.get("Customer_GSTIN"));
+	mergeData.put("Sub_Total",quote.get("Sub_Total"));
+	mergeData.put("GST_Total",quote.get("Tax_Amount"));
+	mergeData.put("Grand_Total",quote.get("Grand_Total"));
+	mergeData.put("quote_No",quote.get("Quote_Generate_NO"));
+	//New Terms and condition
+	mergeData.put("warranty",quote.get("Warranty"));
+	mergeData.put("price_term",quote.get("Price_Terms"));
+	mergeData.put("payment_term",quote.get("Payment_Terms"));
+	mergeData.put("delivery",quote.get("Delivery"));
+	mergeData.put("installation",quote.get("Installation"));
+	mergeData.put("Validity_line",quote.get("Validity"));
+	mergeData.put("other_term",quote.get("Other_Terms"));
+	mergeData.put("GST",quote.get("GST_Duties"));
+	mergeData.put("Advance_Amount",quote.get("Advance_Amount"));
+	mergeData.put("Advance_Date",quote.get("Advance_Date"));
+	mergeData.put("Balance_Amount",quote.get("Balance_Amount"));
+	mergeData.put("Balance_Date",quote.get("Balance_Date"));
+	mergeData.put("Additional_Warranty",quote.get("Additional_Warranty_Month"));
+	mergeData.put("Line_Items",lineItems);
+	// Mail Merge Changes
+	templateId = "vlht2e5fd9ea427b04ed5a23e8b6eb2c0e735";
+	data_map = Map();
+	data_map.put("data",mergeData);
+	merge_details = Map();
+	merge_details.put("merge_data",data_map);
+}
+file = zoho.writer.mergeAndDownload(templateId,"pdf",merge_details,"zohowriter");
+//info file;
+update = zoho.crm.attachFile("Quotes",recordId,file);
+info update;
+return "";
+}
