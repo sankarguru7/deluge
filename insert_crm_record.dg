@@ -1,0 +1,37 @@
+/*
+ * Deluge script to insert a record into Zoho CRM using the v8 API.
+ * API Documentation: https://www.zoho.com/crm/developer/docs/api/v8/insert-records.html
+ */
+
+// 1. Specify the module API name
+module_api_name = "Leads";
+
+// 2. Prepare the record data
+record_data = Map();
+record_data.put("Last_Name", "Smith");
+record_data.put("First_Name", "John");
+record_data.put("Email", "john.smith@example.com");
+record_data.put("Company", "Zylker");
+
+// 3. Construct the payload
+// The API expects an array of records under the "data" key
+data_list = List();
+data_list.add(record_data);
+
+payload = Map();
+payload.put("data", data_list);
+
+// 4. Invoke the API using a Zoho CRM connection
+// Replace "zohocrm_connection" with your actual connection link name
+// Ensure the connection has the required scope: ZohoCRM.modules.ALL or ZohoCRM.modules.leads.CREATE
+response = invokeurl
+[
+	url: "https://www.zohoapis.com/crm/v8/" + module_api_name
+	type: POST
+	parameters: payload.toString()
+	headers: {"Content-Type": "application/json"}
+	connection: "zohocrm_connection"
+];
+
+// 5. Output the response
+info response;
