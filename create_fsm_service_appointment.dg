@@ -1,0 +1,60 @@
+/*
+ * Deluge script to create a Service Appointment in Zoho FSM using the v1 API.
+ * This script is intended to be used in Zoho Creator with an FSM connection.
+ * API Documentation: https://www.zoho.com/fsm/developer/help/api/create-service-appointment.html
+ */
+
+// 1. Define the FSM API endpoint
+url = "https://fsm.zoho.com/fsm/v1/Service_Appointments";
+
+// 2. Prepare the service appointment data
+appointment_data = Map();
+
+// Summary (Mandatory)
+appointment_data.put("Summary", "Repair Service Appointment");
+
+// Scheduled Start and End Times (Mandatory) - ISO8601 format
+// Example: Scheduled for tomorrow morning
+start_time = zoho.currenttime.addDay(1).toString("yyyy-MM-dd'T'09:00:00-05:00");
+end_time = zoho.currenttime.addDay(1).toString("yyyy-MM-dd'T'10:00:00-05:00");
+
+appointment_data.put("Scheduled_Start_Date_Time", start_time);
+appointment_data.put("Scheduled_End_Date_Time", end_time);
+
+// Service Line Items (Mandatory) - Replace with actual IDs from the Work Order
+service_line_items = List();
+service_line_items.add("6191000000425238"); // Example ID
+appointment_data.put("$Service_Line_Items", service_line_items);
+
+// Service Tasks (Mandatory if present in Work Order)
+service_tasks = List();
+service_tasks.add("6191000000425243"); // Example ID
+appointment_data.put("$Service_Tasks_Line_Items", service_tasks);
+
+// Territory (Mandatory if multiple territories exist)
+appointment_data.put("Territory", "6191000000227288"); // Example ID
+
+// Service Resources (Optional - Assigning technician)
+service_resources = List();
+service_resources.add("6191000000227293"); // Example ID
+appointment_data.put("$Service_Resources", service_resources);
+
+// 3. Construct the payload
+// FSM API expects the data array inside a map
+payload = Map();
+payload.put("data", {appointment_data});
+
+// 4. Invoke the API using the Zoho Creator connection to FSM
+// Replace "zohofsm_connection" with the Link Name of your connection in Zoho Creator
+// Ensure the connection has the scope: ZohoFSM.modules.ServiceAppointments.CREATE
+response = invokeurl
+[
+	url: url
+	type: POST
+	parameters: payload.toString()
+	headers: {"Content-Type": "application/json"}
+	connection: "zohofsm_connection"
+];
+
+// 5. Output the response
+info response;
