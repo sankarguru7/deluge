@@ -1,0 +1,54 @@
+/*
+ * Deluge script to create a Service Appointment in Zoho CRM using the v8 API.
+ * This script is intended to be used in Zoho Creator with a CRM connection.
+ * API Documentation: https://www.zoho.com/crm/developer/docs/api/v8/create-appointments.html
+ */
+
+// 1. Define the module API name for Appointments
+module_api_name = "Appointments__s";
+
+// 2. Prepare the appointment data
+appointment_data = Map();
+
+// Service Name (Mandatory) - Replace with actual Service ID
+appointment_data.put("Service_Name__s", {"id": "5545974000002241001"});
+
+// Owner / Service Member (Mandatory) - Replace with actual User ID of the service provider
+appointment_data.put("Owner", "5545974000000411001");
+
+// Appointment Start Time (Mandatory) - ISO8601 format
+// Example: Current time + 1 day
+start_time = zoho.currenttime.addDay(1).toString("yyyy-MM-dd'T'HH:mm:ssZ");
+appointment_data.put("Appointment_Start_Time", start_time);
+
+// Customer Details (Mandatory) - Replace with actual Contact/Lead ID
+appointment_data.put("Customer_Details__s", {
+    "id": "5545974000002755004",
+    "module": "Contacts"
+});
+
+// Optional fields
+appointment_data.put("Subject", "AC Repair Service");
+appointment_data.put("Description", "Standard maintenance and filter cleaning.");
+
+// 3. Construct the payload
+data_list = List();
+data_list.add(appointment_data);
+
+payload = Map();
+payload.put("data", data_list);
+
+// 4. Invoke the API using the Zoho Creator connection to CRM
+// Replace "zohocrm_connection" with the Link Name of your connection in Zoho Creator
+// Ensure the connection has the scope: ZohoCRM.modules.appointments.CREATE
+response = invokeurl
+[
+	url: "https://www.zohoapis.com/crm/v8/" + module_api_name
+	type: POST
+	parameters: payload.toString()
+	headers: {"Content-Type": "application/json"}
+	connection: "zohocrm_connection"
+];
+
+// 5. Output the response
+info response;
