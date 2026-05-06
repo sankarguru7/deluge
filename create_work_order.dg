@@ -1,0 +1,90 @@
+/*
+ * Create a Work Order in Zoho FSM using Deluge
+ * API Documentation: https://www.zoho.com/fsm/developer/help/api/create-work-order.html
+ *
+ * Pre-requisites:
+ * 1. A Zoho OAuth Connection for Zoho FSM with scope: ZohoFSM.modules.WorkOrders.CREATE
+ * 2. Replace placeholders with actual IDs from your Zoho FSM environment.
+ */
+
+// Define mandatory field values (Replace with actual IDs or variables)
+summary = "Remodeling of the Crawford House";
+workOrderType = "Service"; // Options: "Service" or "Inspection"
+contactId = "2373000000232155";
+companyId = "2373000000232150"; // Use null if no company
+territoryId = "2373000000205267";
+serviceAddressId = "2373000000232160";
+billingAddressId = "2373000000232159";
+serviceId = "2373000000214003";
+
+// Construct Service Line Items
+serviceLineItems = List();
+lineItem1 = Map();
+lineItem1.put("Service", serviceId);
+lineItem1.put("Quantity", 1);
+lineItem1.put("Sequence", 1);
+
+// Optional: Add Service Tasks or Parts to the line item if needed
+/*
+serviceTasks = List();
+task1 = Map();
+task1.put("ServiceTask_Name", "Scrubbing");
+task1.put("Service_Task", "2373000000415009");
+task1.put("Sequence", 1);
+serviceTasks.add(task1);
+lineItem1.put("Service_Tasks_Line_Items", serviceTasks);
+
+parts = List();
+part1 = Map();
+part1.put("Part", "2373000000214011");
+part1.put("Quantity", 1);
+part1.put("Sequence", 1);
+parts.add(part1);
+lineItem1.put("Part_Line_Items", parts);
+*/
+
+serviceLineItems.add(lineItem1);
+
+// Construct Address Maps
+serviceAddressMap = Map();
+serviceAddressMap.put("id", serviceAddressId);
+
+billingAddressMap = Map();
+billingAddressMap.put("id", billingAddressId);
+
+// Construct the Work Order data map
+workOrderData = Map();
+workOrderData.put("Summary", summary);
+workOrderData.put("Type", workOrderType);
+workOrderData.put("Contact", contactId);
+workOrderData.put("Company", companyId);
+workOrderData.put("Territory", territoryId);
+workOrderData.put("Service_Address", serviceAddressMap);
+workOrderData.put("Billing_Address", billingAddressMap);
+workOrderData.put("Service_Line_Items", serviceLineItems);
+
+// Wrap the data in a list under the 'data' key as required by Zoho APIs
+dataList = List();
+dataList.add(workOrderData);
+
+payload = Map();
+payload.put("data", dataList);
+
+// Define the Zoho Connection name (Must be created in Zoho Setup -> Connections)
+connectionName = "zohofsm";
+
+// API Endpoint
+apiUrl = "https://fsm.zoho.com/fsm/v1/Work_Orders";
+
+// Execute the API Request
+response = invokeurl
+[
+	url :apiUrl
+	type :POST
+	parameters :payload.toString()
+	headers :{"Content-Type":"application/json"}
+	connection :connectionName
+];
+
+// Output the response for debugging
+info response;
