@@ -1,0 +1,60 @@
+/*
+ * Create a Work Order in Zoho FSM using Deluge
+ *
+ * Troubleshooting "Unable to Update Grand Total" / "Error while populating missing fields":
+ * 1. This error is usually related to the system's inability to calculate the
+ *    financial fields (Price, Tax, Total) of the line item.
+ * 2. Providing 'Unit_Price', 'List_Price', and 'Tax' information explicitly
+ *    can often bypass these validation/population errors.
+ * 3. Ensure your Service/Product ID is correct and active.
+ */
+
+// 1. IDs - REPLACE WITH REAL IDs FROM YOUR ENVIRONMENT
+contactId = "2373000000232155";
+territoryId = "2373000000205267";
+serviceId = "2373000000214003";
+serviceAddressId = "2373000000232160";
+billingAddressId = "2373000000232159";
+
+// 2. Construct Service Line Items
+serviceLineItems = List();
+lineItem1 = Map();
+lineItem1.put("Service", serviceId); // Using string ID as per documentation sample
+lineItem1.put("Quantity", 1);
+lineItem1.put("Sequence", 1);
+
+/*
+ * FIX ATTEMPT: Explicitly set pricing and tax to prevent server-side population errors.
+ */
+lineItem1.put("Unit_Price", 0.0);
+lineItem1.put("List_Price", 0.0);
+lineItem1.put("Tax", {"Taxable": false});
+
+serviceLineItems.add(lineItem1);
+
+// 3. Construct the Work Order data map
+workOrderData = Map();
+workOrderData.put("Summary", "Work Order - " + zoho.currenttime);
+workOrderData.put("Type", "Service");
+workOrderData.put("Contact", contactId); // String ID
+workOrderData.put("Company", null);
+workOrderData.put("Territory", territoryId); // String ID
+workOrderData.put("Service_Address", {"id": serviceAddressId});
+workOrderData.put("Billing_Address", {"id": billingAddressId});
+workOrderData.put("Service_Line_Items", serviceLineItems);
+
+// 4. Wrap the data
+payload = Map();
+payload.put("data", {workOrderData});
+
+// 5. API Request
+response = invokeurl
+[
+	url :"https://fsm.zoho.com/fsm/v1/Work_Orders"
+	type :POST
+	parameters :payload.toJSONString()
+	headers :{"Content-Type":"application/json"}
+	connection :"zohofsm"
+];
+
+info response;
