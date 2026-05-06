@@ -1,13 +1,15 @@
 /*
  * Create a Work Order in Zoho FSM using Deluge
  *
- * Troubleshooting "Unable to Update Grand Total" & "Error while populating missing fields":
- * 1. This error often occurs when the Service/Product ID is passed as a string,
- *    but the API expects an object, or when pricing/tax fields are missing.
- * 2. Ensure you use REAL IDs from your environment for Contact, Territory, and Service.
+ * Troubleshooting "Unable to Update Grand Total" / "Error while populating missing fields":
+ * 1. This error is usually related to the system's inability to calculate the
+ *    financial fields (Price, Tax, Total) of the line item.
+ * 2. Providing 'Unit_Price', 'List_Price', and 'Tax' information explicitly
+ *    can often bypass these validation/population errors.
+ * 3. Ensure your Service/Product ID is correct and active.
  */
 
-// 1. Define IDs (REPLACE WITH YOUR ACTUAL IDs)
+// 1. IDs - REPLACE WITH REAL IDs FROM YOUR ENVIRONMENT
 contactId = "2373000000232155";
 territoryId = "2373000000205267";
 serviceId = "2373000000214003";
@@ -17,16 +19,16 @@ billingAddressId = "2373000000232159";
 // 2. Construct Service Line Items
 serviceLineItems = List();
 lineItem1 = Map();
+lineItem1.put("Service", serviceId); // Using string ID as per documentation sample
+lineItem1.put("Quantity", 1);
+lineItem1.put("Sequence", 1);
 
 /*
- * FIX: Many Zoho APIs now require the Product/Service to be an object with an 'id'.
- * Also, providing Unit_Price and Discount can help the system calculate the Grand Total.
+ * FIX ATTEMPT: Explicitly set pricing and tax to prevent server-side population errors.
  */
-lineItem1.put("Service", {"id": serviceId});
-lineItem1.put("Quantity", 1);
-lineItem1.put("Unit_Price", 0.0); // Set to actual price or 0.0
-lineItem1.put("Discount", 0.0);
-lineItem1.put("Sequence", 1);
+lineItem1.put("Unit_Price", 0.0);
+lineItem1.put("List_Price", 0.0);
+lineItem1.put("Tax", {"Taxable": false});
 
 serviceLineItems.add(lineItem1);
 
@@ -34,26 +36,25 @@ serviceLineItems.add(lineItem1);
 workOrderData = Map();
 workOrderData.put("Summary", "Work Order - " + zoho.currenttime);
 workOrderData.put("Type", "Service");
-workOrderData.put("Contact", {"id": contactId}); // Try object format for Contact too
-workOrderData.put("Territory", {"id": territoryId}); // Try object format for Territory
+workOrderData.put("Contact", contactId); // String ID
+workOrderData.put("Company", null);
+workOrderData.put("Territory", territoryId); // String ID
 workOrderData.put("Service_Address", {"id": serviceAddressId});
 workOrderData.put("Billing_Address", {"id": billingAddressId});
 workOrderData.put("Service_Line_Items", serviceLineItems);
 
-// 4. Wrap the data in a list under the 'data' key
+// 4. Wrap the data
 payload = Map();
 payload.put("data", {workOrderData});
 
-// 5. Execute the API Request
-// toJSONString() ensures the payload is formatted correctly for the API
+// 5. API Request
 response = invokeurl
 [
 	url :"https://fsm.zoho.com/fsm/v1/Work_Orders"
 	type :POST
 	parameters :payload.toJSONString()
 	headers :{"Content-Type":"application/json"}
-	connection :"zohofsm" // Replace with your actual connection link name
+	connection :"zohofsm"
 ];
 
-// 6. Debugging
 info response;
