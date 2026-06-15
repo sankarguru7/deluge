@@ -1,12 +1,17 @@
 function addRow(data = null) {
 
     let table = document.getElementById("paymentBody");
-
     let row = table.insertRow();
 
-    let paymentType = data ? data.Payment_Type : "";
-    let amount = data ? data.Amount : "";
-    let days = data ? data.Days : "";
+    let paymentType = "";
+    let amount = "";
+    let days = "";
+
+    if (data) {
+        paymentType = data.Payment_Type || "";
+        amount = data.Amount || "";
+        days = data.Days || "";
+    }
 
     row.innerHTML = `
 <td><button class="deleteRow" onclick="deleteRow(this)">X</button></td>
@@ -14,20 +19,37 @@ function addRow(data = null) {
 <td>
 <select name="payment_type[]">
 <option value="">Select</option>
-<option value="Payment Received" ${paymentType === 'Payment Received' ? 'selected' : ''}>Payment Received</option>
-<option value="Due On Installation" ${paymentType === 'Due On Installation' ? 'selected' : ''}>Due On Installation</option>
-<option value="Flexible Payment" ${paymentType === 'Flexible Payment' ? 'selected' : ''}>Flexible Payment</option>
+<option value="Payment Received">Payment Received</option>
+<option value="Due On Installation">Due On Installation</option>
+<option value="Flexible Payment">Flexible Payment</option>
 </select>
 </td>
 
 <td>
-<input type="number" name="amount[]" value="${amount}" placeholder="Enter Amount" oninput="calculateTotals()">
+<input type="number" name="amount[]" placeholder="Enter Amount" oninput="calculateTotals()">
 </td>
 
 <td>
-<input type="number" name="day[]" value="${days}" placeholder="Enter Day" ${paymentType === 'Payment Received' || paymentType === 'Due On Installation' ? 'readonly' : ''}>
+<input type="number" name="day[]" placeholder="Enter Day">
 </td>
 `;
+
+    // Explicitly setting values to ensure they are filled
+    if (data) {
+        let select = row.querySelector("select[name='payment_type[]']");
+        let amountInput = row.querySelector("input[name='amount[]']");
+        let daysInput = row.querySelector("input[name='day[]']");
+
+        if (select) select.value = paymentType;
+        if (amountInput) amountInput.value = amount;
+        if (daysInput) {
+            daysInput.value = days;
+            if (paymentType === "Payment Received" || paymentType === "Due On Installation") {
+                daysInput.readOnly = true;
+            }
+        }
+    }
+
     calculateTotals();
 }
 
