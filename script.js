@@ -151,7 +151,7 @@ function savePayments() {
 
         APIData: {
             "id": recordId,
-            "Payment_Timeline": subformData
+            "Payment_Terms": subformData
         }
 
     };
@@ -193,11 +193,21 @@ ZOHO.embeddedApp.on("PageLoad", function (data) {
         if (response.data && response.data.length > 0) {
             let record = response.data[0];
 
-            // Fill existing subform data
-            if (record.Payment_Timeline && record.Payment_Timeline.length > 0) {
+            // Try to fill existing subform data from record
+            if (record.Payment_Terms && record.Payment_Terms.length > 0) {
                 document.getElementById("paymentBody").innerHTML = ""; // Clear initial empty row
-                record.Payment_Timeline.forEach(row => {
+                record.Payment_Terms.forEach(row => {
                     addRow(row);
+                });
+            } else {
+                // If not in main record, try fetching as related records (subform)
+                ZOHO.CRM.API.getRelatedRecords({ Entity: module, RecordID: recordId, RelatedList: "Payment_Terms" }).then(function (relatedResponse) {
+                    if (relatedResponse.data && relatedResponse.data.length > 0) {
+                        document.getElementById("paymentBody").innerHTML = ""; // Clear initial empty row
+                        relatedResponse.data.forEach(row => {
+                            addRow(row);
+                        });
+                    }
                 });
             }
 
