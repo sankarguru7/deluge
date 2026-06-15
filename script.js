@@ -166,8 +166,16 @@ ZOHO.embeddedApp.on("PageLoad", function (data) {
     ZOHO.CRM.API.getRecord({ Entity: module, RecordID: recordId }).then(function (response) {
         if (response.data && response.data.length > 0) {
             let record = response.data[0];
-            dealAmount = parseFloat(record.Amount) || 0;
-            calculateTotals();
+            let prospect = record.Prospect;
+            if (prospect && prospect.id) {
+                ZOHO.CRM.API.getRecord({ Entity: "Deals", RecordID: prospect.id }).then(function (dealResponse) {
+                    if (dealResponse.data && dealResponse.data.length > 0) {
+                        let dealRecord = dealResponse.data[0];
+                        dealAmount = parseFloat(dealRecord.Amount) || 0;
+                        calculateTotals();
+                    }
+                });
+            }
         }
     });
 
