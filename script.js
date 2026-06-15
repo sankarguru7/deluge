@@ -1,8 +1,12 @@
-function addRow() {
+function addRow(data = null) {
 
     let table = document.getElementById("paymentBody");
 
     let row = table.insertRow();
+
+    let paymentType = data ? data.Payment_Type : "";
+    let amount = data ? data.Amount : "";
+    let days = data ? data.Days : "";
 
     row.innerHTML = `
 <td><button class="deleteRow" onclick="deleteRow(this)">X</button></td>
@@ -10,18 +14,18 @@ function addRow() {
 <td>
 <select name="payment_type[]">
 <option value="">Select</option>
-<option value="Payment Received">Payment Received</option>
-<option value="Due On Installation">Due On Installation</option>
-<option value="Flexible Payment">Flexible Payment</option>
+<option value="Payment Received" ${paymentType === 'Payment Received' ? 'selected' : ''}>Payment Received</option>
+<option value="Due On Installation" ${paymentType === 'Due On Installation' ? 'selected' : ''}>Due On Installation</option>
+<option value="Flexible Payment" ${paymentType === 'Flexible Payment' ? 'selected' : ''}>Flexible Payment</option>
 </select>
 </td>
 
 <td>
-<input type="number" name="amount[]" placeholder="Enter Amount" oninput="calculateTotals()">
+<input type="number" name="amount[]" value="${amount}" placeholder="Enter Amount" oninput="calculateTotals()">
 </td>
 
 <td>
-<input type="number" name="day[]" placeholder="Enter Day">
+<input type="number" name="day[]" value="${days}" placeholder="Enter Day" ${paymentType === 'Payment Received' || paymentType === 'Due On Installation' ? 'readonly' : ''}>
 </td>
 `;
     calculateTotals();
@@ -125,7 +129,7 @@ function savePayments() {
 
         APIData: {
             "id": recordId,
-            "Payment_Terms": subformData
+            "Payment_Timeline": subformData
         }
 
     };
@@ -166,6 +170,15 @@ ZOHO.embeddedApp.on("PageLoad", function (data) {
     ZOHO.CRM.API.getRecord({ Entity: module, RecordID: recordId }).then(function (response) {
         if (response.data && response.data.length > 0) {
             let record = response.data[0];
+
+            // Fill existing subform data
+            if (record.Payment_Timeline && record.Payment_Timeline.length > 0) {
+                document.getElementById("paymentBody").innerHTML = ""; // Clear initial empty row
+                record.Payment_Timeline.forEach(row => {
+                    addRow(row);
+                });
+            }
+
             let prospect = record.Prospect;
             if (prospect && prospect.id) {
                 ZOHO.CRM.API.getRecord({ Entity: "Deals", RecordID: prospect.id }).then(function (dealResponse) {
