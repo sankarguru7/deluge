@@ -1,0 +1,120 @@
+body{
+    font-family: Arial;
+    padding:40px;
+    background:#f5f7fb;
+}
+
+.add-btn{
+    background:#2f3b52;
+    color:white;
+    padding:10px 15px;
+    border:none;
+    border-radius:4px;
+    cursor:pointer;
+}
+
+.add-btn:hover{
+    background:#1f2a3d;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:20px;
+    background:white;
+}
+
+th{
+    background:#f1f3f6;
+}
+
+th,td{
+    border:1px solid #ddd;
+    padding:10px;
+    text-align:center;
+}
+
+/* Table Inputs */
+table input,
+table select{
+    width:160px;
+    height:34px;
+    padding:6px 8px;
+    border:1px solid #d6dbe1;
+    border-radius:4px;
+    font-size:13px;
+    background-color:#fff;
+    transition:all 0.2s ease;
+}
+
+/* Focus Effect */
+table input:focus,
+table select:focus{
+    border-color:#2a7be4;
+    box-shadow:0 0 3px rgba(42,123,228,0.4);
+    outline:none;
+}
+
+/* Number alignment */
+input[type=number]{
+    text-align:center;
+}
+
+/* Delete button */
+.deleteRow{
+    background:#ff3b3b;
+    border:none;
+    color:white;
+    font-weight:bold;
+    padding:6px 10px;
+    border-radius:4px;
+    cursor:pointer;
+}
+
+.deleteRow:hover{
+    background:#e22a2a;
+}
+
+/* Save button */
+.actions{
+    margin-top:20px;
+    text-align:center;
+}
+
+.actions button{
+    padding:8px 18px;
+    border:none;
+    background:#2a7be4;
+    color:white;
+    border-radius:4px;
+    cursor:pointer;
+}
+
+.actions button:hover{
+    background:#1d63c3;
+}
+
+.summary-container {
+    margin-top: 20px;
+    padding: 15px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.summary-item {
+    font-size: 16px;
+    color: #333;
+}
+
+.summary-item strong {
+    color: #2f3b52;
+}
+
+.summary-item span {
+    font-weight: bold;
+    color: #2a7be4;
+}

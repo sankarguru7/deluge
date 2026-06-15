@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="./style.css"/>
+<script src="https://live.zwidgets.com/js-sdk/1.2/ZohoEmbededAppSDK.min.js"></script>
+</head>
+<body>
+
+<button class="add-btn" onclick="addRow()">Add Payment +</button>
+
+<table id="paymentTable">
+
+<thead>
+<tr>
+<th>Act</th>
+<th>Payment Type</th>
+<th>Amount</th>
+<th>Day</th>
+</tr>
+</thead>
+
+<tbody id="paymentBody">
+
+<tr>
+
+<td>
+<button class="deleteRow" onclick="deleteRow(this)">X</button>
+</td>
+
+<td>
+<select name="payment_type[]">
+<option value="">Select</option>
+<option value="Payment Received">Payment Received</option>
+<option value="Due On Installation">Due On Installation</option>
+<option value="Flexible Payment">Flexible Payment</option>
+</select>
+</td>
+
+<td>
+<input type="number" name="amount[]" placeholder="Enter Amount" oninput="calculateTotals()">
+</td>
+
+<td>
+<input type="number" name="day[]" placeholder="Enter Day">
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+<div id="summarySection" class="summary-container">
+    <div class="summary-item">
+        <strong>Total Deal Amount: </strong>
+        <span id="totalDealAmount">0.00</span>
+    </div>
+    <div class="summary-item">
+        <strong>Total Added Amount: </strong>
+        <span id="totalAddedAmount">0.00</span>
+    </div>
+    <div class="summary-item">
+        <strong>Remaining Amount: </strong>
+        <span id="remainingAmount">0.00</span>
+    </div>
+</div>
+
+<div class="actions">
+<button type="button" onclick="savePayments()">Save</button>
+</div>
+
+<script src="./script.js"></script>
+
+</body>
+</html>
