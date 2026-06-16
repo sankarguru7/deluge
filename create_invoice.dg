@@ -1,0 +1,193 @@
+getdetails = zoho.crm.getRecordById("Sales_Orders",SOID);
+info "SO Data ==> " + getdetails;
+division = getdetails.get("Division");
+if(getdetails == null || getdetails.isEmpty())
+{
+	info "No SO found";
+	return;
+}
+invoiceId = "";
+invLookup = getdetails.get("Invoice");
+if(invLookup != null)
+{
+	try
+	{
+		invoiceId = invLookup.get("id");
+	}
+	catch (e)
+	{
+		invoiceId = invLookup;
+	}
+}
+info "Invoice ID ==> " + invoiceId;
+
+// Preparation for Deletion (to prevent duplication)
+if(invoiceId != "")
+{
+	// Delete from Custom Module
+	response = invokeurl
+	[
+		url :"https://www.zohoapis.com/crm/v2/CustomModule5001/" + invoiceId
+		type :DELETE
+		connection:"z_crm"
+	];
+	info "Deleted Custom ==> " + response;
+}
+
+// Search and Delete from Standard Module to prevent duplication
+searchStd = zoho.crm.searchRecords("Invoices", "(Sales_Order:equals:" + SOID + ")");
+if(searchStd.size() > 0)
+{
+	for each rec in searchStd
+	{
+		delStd = invokeurl
+		[
+			url :"https://www.zohoapis.com/crm/v2/Invoices/" + rec.get("id")
+			type :DELETE
+			connection:"z_crm"
+		];
+		info "Deleted Standard ==> " + delStd;
+	}
+}
+
+// ---------------------------------------------------------
+// Custom Module Invoice Data Preparation
+// ---------------------------------------------------------
+invmap = Map();
+if(getdetails.get("Billing_Account") != null)
+{
+	invmap.put("Billing_Account",{"id":getdetails.get("Billing_Account").get("id")});
+}
+if(getdetails.get("Shipping_Account") != null)
+{
+	invmap.put("Shipping_Account",{"id":getdetails.get("Shipping_Account").get("id")});
+}
+if(getdetails.get("Contact_Name") != null)
+{
+	invmap.put("Contact_Name",getdetails.get("Contact_Name"));
+}
+invmap.put("Subject",getdetails.get("Subject"));
+invmap.put("Invoice_Date",zoho.currentdate.toString("yyyy-MM-dd"));
+invmap.put("Terms_and_Conditions",getdetails.get("Terms_and_Conditions"));
+invmap.put("Description",getdetails.get("Description"));
+invmap.put("Status","Created");
+
+// ---------------------------------------------------------
+// Standard Module Invoice Data Preparation
+// ---------------------------------------------------------
+stdInvMap = Map();
+stdInvMap.put("Subject",getdetails.get("Subject"));
+if(getdetails.get("Billing_Account") != null)
+{
+	stdInvMap.put("Account_Name",{"id":getdetails.get("Billing_Account").get("id")});
+}
+if(getdetails.get("Contact_Name") != null)
+{
+	stdInvMap.put("Contact_Name",getdetails.get("Contact_Name"));
+}
+stdInvMap.put("Invoice_Date",zoho.currentdate.toString("yyyy-MM-dd"));
+stdInvMap.put("Terms_and_Conditions",getdetails.get("Terms_and_Conditions"));
+stdInvMap.put("Description",getdetails.get("Description"));
+stdInvMap.put("Status","Created");
+stdInvMap.put("Sales_Order",{"id":SOID});
+
+subformList = list();
+stdSubformList = list();
+if(getdetails.containsKey("Product_Details"))
+{
+	for each  item in getdetails.get("Product_Details")
+	{
+		// Custom Module Row
+		row = Map();
+		row.put("Product_Name",item.get("product"));
+		row.put("Quantity",ifnull(item.get("quantity"),1));
+		row.put("Total",ifnull(item.get("total"),0));
+		row.put("Description",ifnull(item.get("product_description"),""));
+		row.put("Total_Discount1",ifnull(item.get("Discount"),0));
+		row.put("Total_Discount",ifnull(item.get("Discount_Amount"),0));
+		row.put("Tax1",ifnull(item.get("Tax"),0));
+		subformList.add(row);
+
+		// Standard Module Row
+		stdRow = Map();
+		stdRow.put("product",item.get("product"));
+		stdRow.put("quantity",ifnull(item.get("quantity"),1));
+		stdRow.put("list_price",ifnull(item.get("list_price"),0));
+		stdRow.put("Discount",ifnull(item.get("Discount"),0));
+		stdRow.put("Tax",ifnull(item.get("Tax"),0));
+		stdSubformList.add(stdRow);
+	}
+}
+invmap.put("Invoiced_Items",subformList);
+invmap.put("Sales_Order",{"id":SOID});
+
+stdInvMap.put("Invoiced_Items",stdSubformList);
+
+// Finalizing Data
+finalList = list();
+finalList.add(invmap);
+finaldata = Map();
+finaldata.put("data",finalList);
+
+stdFinalList = list();
+stdFinalList.add(stdInvMap);
+stdFinalData = Map();
+stdFinalData.put("data",stdFinalList);
+
+// ---------------------------------------------------------
+// Creation Logic
+// ---------------------------------------------------------
+info "Create Invoices";
+genNum = standalone.NumberGeneration_modules("Invoice");
+invmap.put("Name",genNum);
+
+// Create Custom Invoice
+createinvoice = invokeurl
+[
+	url :"https://www.zohoapis.com/crm/v2/CustomModule5001"
+	type :POST
+	parameters:finaldata.toJSONString()
+	connection:"z_crm"
+];
+info "Created Custom ==> " + createinvoice;
+
+// Create Standard Invoice
+createStdInvoice = invokeurl
+[
+	url :"https://www.zohoapis.com/crm/v2/Invoices"
+	type :POST
+	parameters:stdFinalData.toJSONString()
+	connection:"z_crm"
+];
+info "Created Standard ==> " + createStdInvoice;
+
+if(createinvoice.contains("data"))
+{
+	newInvId = createinvoice.get("data").get(0).get("details").get("id");
+	updateMap = Map();
+	updateMap.put("Invoice",newInvId);
+	updateList = list();
+	updateList.add(updateMap);
+	updateData = Map();
+	updateData.put("data",updateList);
+	updateSO = invokeurl
+	[
+		url :"https://www.zohoapis.com/crm/v2/Sales_Orders/" + SOID
+		type :PUT
+		parameters:updateData.toJSONString()
+		connection:"z_crm"
+	];
+	info "SO Updated ==> " + updateSO;
+
+	if(division == "Injectables")
+	{
+		standalone.create_invoice_injectables(newInvId);
+	}
+	if(division == "Cosmetics")
+	{
+		standalone.CreateInvoiceCosmetics(newInvId);
+	}
+}
+
+info "Finished";
+info "New Custom Inv ID: " + newInvId;
