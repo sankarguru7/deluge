@@ -6,6 +6,11 @@
  */
 
 // 1. Construct the Work Order record map
+/**
+ * Note: 'Grand_Total', 'Sub_Total', and 'Tax_Amount' are READ-ONLY.
+ * They are automatically calculated by the system based on the Service Line Items.
+ * If you need to apply a discount or adjustment, use the 'Adjustment' field or item-level discounts.
+ */
 workOrderData = Map();
 workOrderData.put("Summary", "Work Order Summary"); // Mandatory
 workOrderData.put("Type", "Service"); // Mandatory: 'Service' or 'Inspection'
