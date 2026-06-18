@@ -1,0 +1,73 @@
+/**
+ * Deluge script to create a Work Order in Zoho FSM with Service Line Items.
+ *
+ * Documentation: https://www.zoho.com/fsm/developer/help/api/create-work-order.html
+ * Scope required: ZohoFSM.modules.WorkOrders.CREATE
+ */
+
+// 1. Construct the Work Order record map
+workOrderData = Map();
+workOrderData.put("Summary", "Work Order Summary"); // Mandatory
+workOrderData.put("Type", "Service"); // Mandatory: 'Service' or 'Inspection'
+workOrderData.put("Contact", "REPLACE_WITH_CONTACT_ID"); // Mandatory (if Company is null)
+workOrderData.put("Company", "REPLACE_WITH_COMPANY_ID"); // Mandatory (if Contact is null)
+workOrderData.put("Territory", "REPLACE_WITH_TERRITORY_ID"); // Mandatory (if non-default exists)
+
+// 2. Set Service Address (Mandatory)
+serviceAddress = Map();
+serviceAddress.put("id", "REPLACE_WITH_SERVICE_ADDRESS_ID");
+workOrderData.put("Service_Address", serviceAddress);
+
+// 3. Set Billing Address (Mandatory)
+billingAddress = Map();
+billingAddress.put("id", "REPLACE_WITH_BILLING_ADDRESS_ID");
+workOrderData.put("Billing_Address", billingAddress);
+
+// 4. Construct Service Line Items (Mandatory)
+serviceLineItems = List();
+
+lineItem1 = Map();
+lineItem1.put("Service", "REPLACE_WITH_SERVICE_ID"); // Product/Service ID
+lineItem1.put("Quantity", 1);
+lineItem1.put("Sequence", 1);
+
+// Optional: Service Tasks under this Line Item
+serviceTasks = List();
+task1 = Map();
+task1.put("ServiceTask_Name", "Task Name");
+task1.put("Service_Task", "REPLACE_WITH_SERVICE_TASK_ID");
+task1.put("Sequence", 1);
+serviceTasks.add(task1);
+lineItem1.put("Service_Tasks_Line_Items", serviceTasks);
+
+// Optional: Parts under this Line Item
+partItems = List();
+part1 = Map();
+part1.put("Part", "REPLACE_WITH_PART_ID");
+part1.put("Quantity", 1);
+part1.put("Sequence", 1);
+partItems.add(part1);
+lineItem1.put("Part_Line_Items", partItems);
+
+serviceLineItems.add(lineItem1);
+workOrderData.put("Service_Line_Items", serviceLineItems);
+
+// 5. Wrap the record in a 'data' list as per API requirements
+dataList = List();
+dataList.add(workOrderData);
+payload = Map();
+payload.put("data", dataList);
+
+// 6. Execute the POST request
+// Note: Ensure you have created a connection for Zoho FSM with the required scope.
+response = invokeurl
+[
+	url :"https://fsm.zoho.com/fsm/v1/Work_Orders"
+	type :POST
+	parameters :payload.toJSONString()
+	headers :{"Content-Type":"application/json"}
+	connection :"zohofsm" // Replace 'zohofsm' with your actual connection link name
+];
+
+// 7. Handle response
+info response;
