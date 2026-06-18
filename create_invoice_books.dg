@@ -1,0 +1,263 @@
+/*
+    Configuration for Zoho Books
+    Please replace YOUR_BOOKS_ORG_ID with your actual Zoho Books Organization ID.
+    Ensure a connection named 'z_books' exists with necessary Books scopes.
+*/
+booksOrgId = "YOUR_BOOKS_ORG_ID";
+booksConnection = "z_books";
+
+getdetails = zoho.crm.getRecordById("Sales_Orders", SOID);
+info "SO Data ==> " + getdetails;
+division = getdetails.get("Division");
+if(getdetails == null || getdetails.isEmpty())
+{
+	info "No SO found";
+	return;
+}
+invoiceId = "";
+invLookup = getdetails.get("Invoice");
+if(invLookup != null)
+{
+	try
+	{
+		invoiceId = invLookup.get("id");
+	}
+	catch (e)
+	{
+		invoiceId = invLookup;
+	}
+}
+info "Invoice ID ==> " + invoiceId;
+
+// ---------------------------------------------------------
+// Duplication Prevention (From Previous Logic)
+// ---------------------------------------------------------
+if(invoiceId != "")
+{
+	// Delete from Custom Module
+	response = invokeurl
+	[
+		url :"https://www.zohoapis.com/crm/v2/CustomModule5001/" + invoiceId
+		type :DELETE
+		connection:"z_crm"
+	];
+	info "Deleted Custom ==> " + response;
+}
+
+searchStd = zoho.crm.searchRecords("Invoices", "(Sales_Order:equals:" + SOID + ")");
+if(searchStd.size() > 0)
+{
+	for each  rec in searchStd
+	{
+		delStd = invokeurl
+		[
+			url :"https://www.zohoapis.com/crm/v2/Invoices/" + rec.get("id")
+			type :DELETE
+			connection:"z_crm"
+		];
+		info "Deleted Standard ==> " + delStd;
+	}
+}
+
+// ---------------------------------------------------------
+// Zoho Books Customer ID Resolution
+// ---------------------------------------------------------
+booksCustomerId = "";
+crmAccountId = ifnull(getdetails.get("Billing_Account"), Map()).get("id");
+if(crmAccountId != null)
+{
+	importCustomer = invokeurl
+	[
+		url :"https://www.zohoapis.com/books/v3/crm/account/" + crmAccountId + "/import?organization_id=" + booksOrgId
+		type :POST
+		connection:booksConnection
+	];
+	if(importCustomer.get("code") == 0)
+	{
+		booksCustomerId = importCustomer.get("data").get("contact_id");
+	}
+}
+
+// ---------------------------------------------------------
+// Data Preparation for CRM and Books
+// ---------------------------------------------------------
+invmap = Map();
+stdInvMap = Map();
+subformList = List();
+stdSubformList = List();
+booksLineItems = List();
+
+// Caching to optimize performance (Addressing "make it faster")
+booksItemsCache = Map();
+allProductsSynced = true;
+
+if(getdetails.containsKey("Product_Details"))
+{
+	for each  item in getdetails.get("Product_Details")
+	{
+		crmProductId = ifnull(item.get("product"), Map()).get("id");
+
+		// CRM Custom Module Row
+		row = Map();
+		row.put("Product_Name", item.get("product"));
+		row.put("Quantity", ifnull(item.get("quantity"), 1));
+		row.put("Total", ifnull(item.get("total"), 0));
+		row.put("Description", ifnull(item.get("product_description"), ""));
+		row.put("Total_Discount1", ifnull(item.get("Discount"), 0));
+		row.put("Total_Discount", ifnull(item.get("Discount_Amount"), 0));
+		row.put("Tax1", ifnull(item.get("Tax"), 0));
+		subformList.add(row);
+
+		// CRM Standard Module Row
+		stdRow = Map();
+		stdRow.put("product", item.get("product"));
+		stdRow.put("quantity", ifnull(item.get("quantity"), 1));
+		stdRow.put("list_price", ifnull(item.get("list_price"), 0));
+		stdRow.put("Discount", ifnull(item.get("Discount"), 0));
+		stdRow.put("Tax", ifnull(item.get("Tax"), 0));
+		stdSubformList.add(stdRow);
+
+		// Zoho Books Line Item with Caching
+		if(crmProductId != null)
+		{
+			booksItemId = "";
+			if(booksItemsCache.containsKey(crmProductId))
+			{
+				booksItemId = booksItemsCache.get(crmProductId);
+			}
+			else
+			{
+				importItem = invokeurl
+				[
+					url :"https://www.zohoapis.com/books/v3/crm/item/" + crmProductId + "/import?organization_id=" + booksOrgId
+					type :POST
+					connection:booksConnection
+				];
+				if(importItem.get("code") == 0)
+				{
+					booksItemId = importItem.get("data").get("item_id");
+					booksItemsCache.put(crmProductId, booksItemId);
+				}
+				else
+				{
+					allProductsSynced = false;
+					info "Failed to sync product to Books: " + crmProductId;
+				}
+			}
+			if(booksItemId != "")
+			{
+				booksItemMap = Map();
+				booksItemMap.put("item_id", booksItemId);
+				booksItemMap.put("quantity", ifnull(item.get("quantity"), 1));
+				booksItemMap.put("rate", ifnull(item.get("list_price"), 0));
+				booksItemMap.put("description", ifnull(item.get("product_description"), ""));
+				booksItemMap.put("discount", ifnull(item.get("Discount"), 0));
+				booksLineItems.add(booksItemMap);
+			}
+		}
+	}
+}
+
+// Finalize CRM Data
+invmap.put("Billing_Account", ifnull(getdetails.get("Billing_Account"), Map()));
+invmap.put("Shipping_Account", ifnull(getdetails.get("Shipping_Account"), Map()));
+invmap.put("Contact_Name", ifnull(getdetails.get("Contact_Name"), Map()));
+invmap.put("Subject", getdetails.get("Subject"));
+invmap.put("Invoice_Date", zoho.currentdate.toString("yyyy-MM-dd"));
+invmap.put("Terms_and_Conditions", getdetails.get("Terms_and_Conditions"));
+invmap.put("Description", getdetails.get("Description"));
+invmap.put("Status", "Created");
+invmap.put("Invoiced_Items", subformList);
+invmap.put("Sales_Order", {"id": SOID});
+
+stdInvMap.put("Subject", getdetails.get("Subject"));
+stdInvMap.put("Account_Name", ifnull(getdetails.get("Billing_Account"), Map()));
+stdInvMap.put("Contact_Name", ifnull(getdetails.get("Contact_Name"), Map()));
+stdInvMap.put("Invoice_Date", zoho.currentdate.toString("yyyy-MM-dd"));
+stdInvMap.put("Terms_and_Conditions", getdetails.get("Terms_and_Conditions"));
+stdInvMap.put("Description", getdetails.get("Description"));
+stdInvMap.put("Status", "Created");
+stdInvMap.put("Sales_Order", {"id": SOID});
+stdInvMap.put("Invoiced_Items", stdSubformList);
+
+// ---------------------------------------------------------
+// CRM Invoice Creation
+// ---------------------------------------------------------
+genNum = standalone.NumberGeneration_modules("Invoice");
+invmap.put("Name", genNum);
+
+// Create Custom Invoice
+createinvoice = invokeurl
+[
+	url :"https://www.zohoapis.com/crm/v2/CustomModule5001"
+	type :POST
+	parameters:{"data": {invmap}}.toJSONString()
+	connection:"z_crm"
+];
+info "Created Custom ==> " + createinvoice;
+
+// Create Standard Invoice
+createStdInvoice = invokeurl
+[
+	url :"https://www.zohoapis.com/crm/v2/Invoices"
+	type :POST
+	parameters:{"data": {stdInvMap}}.toJSONString()
+	connection:"z_crm"
+];
+info "Created Standard ==> " + createStdInvoice;
+
+if(createinvoice.contains("data"))
+{
+	newInvId = createinvoice.get("data").get(0).get("details").get("id");
+	updateSO = invokeurl
+	[
+		url :"https://www.zohoapis.com/crm/v2/Sales_Orders/" + SOID
+		type :PUT
+		parameters:{"data": {{"Invoice": newInvId}}}.toJSONString()
+		connection:"z_crm"
+	];
+	info "SO Updated ==> " + updateSO;
+
+	// ---------------------------------------------------------
+	// Zoho Books Invoice Creation (Optimized & No Writer)
+	// ---------------------------------------------------------
+	if(booksCustomerId != "" && allProductsSynced && booksLineItems.size() > 0)
+	{
+		booksInvoiceMap = Map();
+		booksInvoiceMap.put("customer_id", booksCustomerId);
+		booksInvoiceMap.put("invoice_number", genNum);
+		booksInvoiceMap.put("date", zoho.currentdate.toString("yyyy-MM-dd"));
+		booksInvoiceMap.put("line_items", booksLineItems);
+		booksInvoiceMap.put("reference_number", ifnull(getdetails.get("Subject"), ""));
+
+		// Address Mapping
+		billingAddress = Map();
+		billingAddress.put("address", ifnull(getdetails.get("Billing_Street"), ""));
+		billingAddress.put("city", ifnull(getdetails.get("Billing_City"), ""));
+		billingAddress.put("state", ifnull(getdetails.get("Billing_State"), ""));
+		billingAddress.put("zip", ifnull(getdetails.get("Billing_Code"), ""));
+		billingAddress.put("country", ifnull(getdetails.get("Billing_Country"), ""));
+		booksInvoiceMap.put("billing_address", billingAddress);
+
+		shippingAddress = Map();
+		shippingAddress.put("address", ifnull(getdetails.get("Shipping_Street"), ""));
+		shippingAddress.put("city", ifnull(getdetails.get("Shipping_City"), ""));
+		shippingAddress.put("state", ifnull(getdetails.get("Shipping_State"), ""));
+		shippingAddress.put("zip", ifnull(getdetails.get("Shipping_Code"), ""));
+		shippingAddress.put("country", ifnull(getdetails.get("Shipping_Country"), ""));
+		booksInvoiceMap.put("shipping_address", shippingAddress);
+
+		createBooksInvoice = invokeurl
+		[
+			url :"https://www.zohoapis.com/books/v3/invoices?organization_id=" + booksOrgId + "&ignore_auto_number_generation=true"
+			type :POST
+			parameters:booksInvoiceMap.toJSONString()
+			headers:{"Content-Type":"application/json"}
+			connection:booksConnection
+		];
+		info "Created Books Invoice ==> " + createBooksInvoice;
+	}
+}
+
+info "Finished";
+return "";
