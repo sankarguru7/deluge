@@ -1,0 +1,198 @@
+string standalone.CreateInvoiceCosmetics(Int invid)
+{
+/*
+    Configuration for Zoho Books
+    Please replace YOUR_BOOKS_ORG_ID with your actual Zoho Books Organization ID.
+    Ensure that a connection named 'z_books' (or your preferred name) exists with Books scopes.
+*/
+booksOrgId = "YOUR_BOOKS_ORG_ID";
+booksConnection = "z_books";
+invVals = invokeurl
+[
+	url :"https://www.zohoapis.com/crm/v8/Invoices/" + invid
+	type :GET
+	connection:"z_crm"
+];
+info invVals;
+// getinvoice = zoho.crm.getRecordById("Invoices",invid);
+getinvoice = invVals.get("data").get(0);
+info getinvoice;
+if(getinvoice.size() > 0)
+{
+	// Import/Fetch Zoho Books Customer ID from CRM Account ID
+	crmAccountId = ifnull(getinvoice.get("Account_Name"),Map()).get("id");
+	booksCustomerId = "";
+	if(crmAccountId != null)
+	{
+		importCustomer = invokeurl
+		[
+			url :"https://www.zohoapis.com/books/v3/crm/account/" + crmAccountId + "/import?organization_id=" + booksOrgId
+			type :POST
+			connection:booksConnection
+		];
+		if(importCustomer.get("code") == 0)
+		{
+			booksCustomerId = importCustomer.get("data").get("contact_id");
+		}
+	}
+	mergeData = Map();
+	mergeData.put("Invoice.Invoice_No",getinvoice.get("Invoice_No"));
+	mergeData.put("Invoice.Invoice_Date",getinvoice.get("Invoice_Date"));
+	mergeData.put("Invoice.Shipping_State",getinvoice.get("Shipping_State"));
+	mergeData.put("Invoice.Account_Name",getinvoice.get("Account_Name"));
+	mergeData.put("Invoice.Delivery_Type",getinvoice.get("Delivery_Type"));
+	mergeData.put("Invoice.Despatch_Doc_No",getinvoice.get("Despatch_Doc_No"));
+	mergeData.put("Invoice.Region",getinvoice.get("Region"));
+	mergeData.put("Invoice.Billing_Street",getinvoice.get("Billing_Street"));
+	mergeData.put("Invoice.Billing_Street_1",getinvoice.get("Billing_Street_Line_1"));
+	mergeData.put("Invoice.Billing_City",getinvoice.get("Billing_City"));
+	mergeData.put("Invoice.Billing_State",getinvoice.get("Billing_State"));
+	mergeData.put("Invoice.Billing_Code",getinvoice.get("Billing_Code"));
+	mergeData.put("Invoice.Shipping_City",getinvoice.get("Shipping_City"));
+	mergeData.put("Invoice.Shipping_Code",getinvoice.get("Shipping_Code"));
+	mergeData.put("Invoice.Shipping_Street",getinvoice.get("Shipping_Street"));
+	mergeData.put("Invoice.Shipping_Street_1",getinvoice.get("Shipping_Street_Line_1"));
+	mergeData.put("Invoice.Shipping_State",getinvoice.get("Shipping_State"));
+	mergeData.put("Invoice.Shipping_Code",getinvoice.get("Shipping_Code"));
+	mergeData.put("Invoice.GST_NO",getinvoice.get("GST_NO"));
+	mergeData.put("Invoice.Reverse_Tax",getinvoice.get("Reverse_Tax"));
+	subformList = List();
+	booksLineItems = List();
+	// Cache to optimize performance
+	crmProductsCache = Map();
+	booksItemsCache = Map();
+	allProductsSynced = true;
+	totalQty = 0;
+	totalWithoutDiscAmount = 0;
+	totalWithDiscAmount = 0;
+	taxAmount = 0;
+	totalGSTAmount = 0;
+	for each  item in getinvoice.get("Invoiced_Items")
+	{
+		info item;
+		crmProductId = ifnull(item.get("Product_Name"),Map()).get("id");
+		if(crmProductId == null)
+		{
+			continue;
+		}
+		// Fetch CRM Product Details with Caching
+		if(crmProductsCache.containsKey(crmProductId))
+		{
+			getProd = crmProductsCache.get(crmProductId);
+		}
+		else
+		{
+			getProd = zoho.crm.getRecordById("Products",crmProductId);
+			crmProductsCache.put(crmProductId,getProd);
+		}
+		// Import/Fetch Zoho Books Item ID from CRM Product ID with Caching
+		booksItemId = "";
+		if(booksItemsCache.containsKey(crmProductId))
+		{
+			booksItemId = booksItemsCache.get(crmProductId);
+		}
+		else
+		{
+			importItem = invokeurl
+			[
+				url :"https://www.zohoapis.com/books/v3/crm/item/" + crmProductId + "/import?organization_id=" + booksOrgId
+				type :POST
+				connection:booksConnection
+			];
+			if(importItem.get("code") == 0)
+			{
+				booksItemId = importItem.get("data").get("item_id");
+				booksItemsCache.put(crmProductId,booksItemId);
+			}
+			else
+			{
+				allProductsSynced = false;
+				info "Failed to sync product: " + crmProductId + " Error: " + importItem.get("message");
+			}
+		}
+		if(booksItemId != "")
+		{
+			booksItemMap = Map();
+			booksItemMap.put("item_id",booksItemId);
+			booksItemMap.put("quantity",ifnull(item.get("Quantity"),0));
+			booksItemMap.put("rate",item.get("List_Price"));
+			booksItemMap.put("description",ifnull(item.get("product_description"),""));
+			booksItemMap.put("discount",ifnull(item.get("Discount1"),0));
+			booksLineItems.add(booksItemMap);
+		}
+		itemMap = Map();
+		itemMap.put("Line_Items.Item",item.get("Product_Name").get("name"));
+		itemMap.put("Line_Items.HSN",getProd.get("HSN"));
+		itemMap.put("Line_Items.Qty",ifnull(item.get("Quantity"),0));
+		itemMap.put("Line_Items.MRP",item.get("List_Price"));
+		itemMap.put("Line_Items.MRP_Total",ifnull(item.get("Quantity"),0) * ifnull(item.get("List_Price"),0));
+		info ifnull(item.get("Quantity"),0) * ifnull(item.get("List_Price"),0);
+		itemMap.put("Line_Items.Total",ifnull(item.get("Total_After_Discount_1"),0));
+		itemMap.put("Line_Items.Description",ifnull(item.get("product_description"),""));
+		itemMap.put("Line_Items.Disc",ifnull(item.get("Discount1"),0));
+		itemMap.put("Tax1",ifnull(item.get("Tax"),0));
+		itemMap.put("Line_Items.Total_PreGST",ifnull(item.get("Total_After_Discount_1"),0) + ifnull(item.get("Total_Tax"),0));
+		subformList.add(itemMap);
+		taxAmount = taxAmount + ifnull(item.get("Total_Tax"),0);
+		totalQty = totalQty + ifnull(item.get("Quantity"),0);
+		totalWithDiscAmount = totalWithDiscAmount + ifnull(item.get("Total_After_Discount_1"),0);
+		totalWithoutDiscAmount = totalWithoutDiscAmount + ifnull(item.get("Quantity"),0) * ifnull(item.get("List_Price"),0);
+		totalGSTAmount = totalGSTAmount + ifnull(item.get("Total_After_Discount_1"),0) + ifnull(item.get("Total_Tax"),0);
+	}
+	mergeData.put("Overall_Qty",totalQty);
+	mergeData.put("Overall_MRP",totalWithoutDiscAmount);
+	mergeData.put("Overall_Total",totalWithDiscAmount);
+	mergeData.put("Overall_Total_Pre_GST",totalGSTAmount);
+	mergeData.put("Output_IGST",taxAmount);
+	mergeData.put("Rounded_Off",totalWithDiscAmount);
+	mergeData.put("Invoice_Value",taxAmount + totalWithDiscAmount);
+	mergeData.put("Line_Items",subformList);
+	info mergeData;
+	templateId = "4rslxe9e2c5f121f743fb97a014a97ec05b26";
+	data_map = Map();
+	data_map.put("data",mergeData);
+	merge_details = Map();
+	merge_details.put("merge_data",data_map);
+	file = zoho.writer.mergeAndDownload(templateId,"pdf",merge_details,"zohowriter");
+	fname = "Invoice_Cosmetics" + zoho.currentdate.toString("ddMMMyy") + ".pdf";
+	file.setFileName(fname);
+	info file;
+	update = zoho.crm.attachFile("Invoices",invid,file);
+	info update;
+	// Create Invoice in Zoho Books if all products are synced and customer exists
+	if(booksCustomerId != "" && allProductsSynced && booksLineItems.size() > 0)
+	{
+		booksInvoiceMap = Map();
+		booksInvoiceMap.put("customer_id",booksCustomerId);
+		booksInvoiceMap.put("invoice_number",getinvoice.get("Invoice_No"));
+		booksInvoiceMap.put("date",getinvoice.get("Invoice_Date"));
+		booksInvoiceMap.put("line_items",booksLineItems);
+		// Addresses
+		billingAddress = Map();
+		billingAddress.put("address",getinvoice.get("Billing_Street"));
+		billingAddress.put("street2",getinvoice.get("Billing_Street_Line_1"));
+		billingAddress.put("city",getinvoice.get("Billing_City"));
+		billingAddress.put("state",getinvoice.get("Billing_State"));
+		billingAddress.put("zip",getinvoice.get("Billing_Code"));
+		booksInvoiceMap.put("billing_address",billingAddress);
+		shippingAddress = Map();
+		shippingAddress.put("address",getinvoice.get("Shipping_Street"));
+		shippingAddress.put("street2",getinvoice.get("Shipping_Street_Line_1"));
+		shippingAddress.put("city",getinvoice.get("Shipping_City"));
+		shippingAddress.put("state",getinvoice.get("Shipping_State"));
+		shippingAddress.put("zip",getinvoice.get("Shipping_Code"));
+		booksInvoiceMap.put("shipping_address",shippingAddress);
+		// Create request
+		createBooksInvoice = invokeurl
+		[
+			url :"https://www.zohoapis.com/books/v3/invoices?organization_id=" + booksOrgId + "&ignore_auto_number_generation=true"
+			type :POST
+			parameters:booksInvoiceMap.toJSONString()
+			headers:{"Content-Type":"application/json"}
+			connection:booksConnection
+		];
+		info "Books Invoice Creation Response: " + createBooksInvoice;
+	}
+}
+return "";
+}
