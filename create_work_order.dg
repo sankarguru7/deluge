@@ -17,6 +17,7 @@ workOrderData.put("Type", "Service"); // Mandatory: 'Service' or 'Inspection'
 workOrderData.put("Contact", "REPLACE_WITH_CONTACT_ID"); // Mandatory (if Company is null)
 workOrderData.put("Company", "REPLACE_WITH_COMPANY_ID"); // Mandatory (if Contact is null)
 workOrderData.put("Territory", "REPLACE_WITH_TERRITORY_ID"); // Mandatory (if non-default exists)
+workOrderData.put("Adjustment", 0); // Optional: Use this to manually adjust the Grand Total
 
 // 2. Set Service Address (Mandatory)
 serviceAddress = Map();
