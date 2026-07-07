@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Create Sale Order</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="Static/jquery.min.js"></script>
+
+  <script type="application/javascript" src="Static/vue.js"></script>
+
+  <!-- To Access Select Vue -->
+  <link rel="stylesheet" href="Static/vue-select.css" />
+
+  <!-- To access bootstrap -->
+  <link type="text/css" rel="stylesheet" href="Static/bootstrap.min.css" />
+  <link type="text/css" rel="stylesheet" href="Static/bootstrap-vue.css" />
+
+  <!-- To access icons -->
+  <link rel="stylesheet" href="Static/bootstrap-vue-icons.min.css"
+    integrity="sha512-i0tPmtwhNYyKmqYiccSN9qsEX25FsNNkeWqIbjYyk7QoVkPLfyl7QsABy3oIQx5ofROjV6KLJTzV+asMrT25UA=="
+    crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons" />
+  <script type="application/javascript" src="Static/bootstrap-vue.js"></script>
+  <script src="Static/bootstrap-vue-icons.min.js"></script>
+  <script type="application/javascript" src="Static/vue-select.js"></script>
+
+  <link rel="stylesheet" href="stylemain.css" />
+  <link rel="stylesheet" href="loadinggif.css" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="Static/ZohoCrmHelper.js"></script>
+  <script src="Static/ZSDK.js"></script>
+</head>
+
+<body>
+  <div id="app" class="container py-4">
+    <h3 class="mb-4">Create Sales Order</h3>
+
+    <div id="transscreen"></div>
+    <div class="overflow dark" id="preload" v-if="show === 'true'">
+      <div class="companyheader">Loading..</div>
+      <div class="circle-line">
+        <div class="circle-red">&nbsp;</div>
+        <div class="circle-green">&nbsp;</div>
+        <div class="circle-blue">&nbsp;</div>
+        <div class="circle-yellow">&nbsp;</div>
+      </div>
+    </div>
+
+    <!-- Row for dropdowns -->
+    <div class="row mb-3">
+      <div class="col-md-4">
+        <b-form-group label="Select Division">
+          <b-form-select id="divisionid" v-model="selecteddivision" :options="division"
+            @input="OndivisionChange()"></b-form-select>
+        </b-form-group>
+      </div>
+
+      <div class="col-md-4">
+        <b-form-group label="Select Billing Account" label-for="billingselect">
+          <v-select v-model="selectedbillingaccount" id="billingselect" label="text" :options="billingaccounts"
+            @input="OnbillingAcc()" :close-on-select="true">
+          </v-select>
+        </b-form-group>
+      </div>
+
+      <div class="col-md-4">
+        <b-form-group label="Brand" label-for="billingbrand">
+          <v-select v-model="selectbrand" id="billingbrand" label="text" :options="brandist"
+            @input="Onbrandchange()" :close-on-select="true">
+          </v-select>
+        </b-form-group>
+      </div>
+
+      <div class="col-md-4">
+        <b-form-group label="Pricing Terms" label-for="pricing-term">
+          <b-form-input type="text" v-model="selecteterm" id="pricing-term"></b-form-input>
+        </b-form-group>
+      </div>
+
+      <!-- Supply Type — now uses b-form-select exactly like Division -->
+      <div class="col-md-4">
+        <b-form-group label="Supply Type" label-for="supplyType">
+          <b-form-select id="supplyType" v-model="supplyType" :options="supplyTypeOptions"></b-form-select>
+        </b-form-group>
+      </div>
+
+      <div class="col-md-4">
+        <b-form-group label="Communication Box" label-for="communicationBox">
+          <b-form-textarea id="communicationBox" v-model="communicationBox" rows="3" placeholder="">
+          </b-form-textarea>
+        </b-form-group>
+      </div>
+
+    </div>
+
+    <!-- Data Table -->
+    <div>
+      <b-row id="AddMat">
+        <b-col cols="12" sm="8" class="mt-3">
+          <div style="display: flex">
+            <b-button id="addbutton" class="mr-3"
+              style="background: linear-gradient(180.2deg, rgb(30, 33, 48) 6.8%, rgb(74, 98, 110) 131%); color: white !important; color: #fff"
+              @click="addRowHandler">Add Material <a class="add ml-2" title="Add Row" data-toggle="tooltip"><i
+                  class="material-icons icon1">&#xE03B;</i></a></b-button>
+          </div>
+        </b-col>
+      </b-row>
+    </div>
+
+    <div id="Materiallist" style="display: block" class="mt-30 text-center">
+
+      <b-table sticky-header responsive table-class="text-nowrap" :fields="fields" :items="items">
+        <!-- fixed -->
+        <template #table-colgroup="scope">
+          <col v-for="field in scope.fields" :key="field.key" />
+        </template>
+        <template v-for="(field, index) in fields" #[`cell(${field.key})`]="data">
+
+          <a v-if="field.key === 'act'" class="bi bi-trash" style="cursor: pointer; color:red;" title="search"
+            @click="deleterow(data.index)"><img src="Static/delete.png" alt="Icon" style="width:24px;height:24px;"></a>
+          <span v-if="field.key === 'S_No'">{{ items[data.index].S_No }}</span>
+
+          <v-select id="prod" :disabled="Formdisable" v-if="field.key === 'Product'" :key="index" style="width: max-content !important;
+                    display: inline !important;" v-model="items[data.index].Product" hideSelected="true"
+            :multiple="false" :taggable="false" :options="items[data.index].partList" label="Product_Name"
+            @input="(value) =>OnchangeMat(data.index)" tag-placeholder="Select" value="id2" append-to-body>
+
+            <template #option="{ Product_Name, Description }">
+              <bold>{{ Product_Name }}</bold>
+              <br />
+              <cite>{{ Description }}</cite>
+            </template>
+
+          </v-select>
+
+          <b-input type="text" size="sm" v-else-if="field.key === 'qty'" v-model="items[data.index].Qty"
+            @input="(value) =>qtycalculation(data.index)"></b-input>
+
+          <span v-else-if="field.key === 'mrp_price'">{{ items[data.index].Maximum_Selling_Price }}</span>
+
+          <span v-else-if="field.key === 'mrp_total'">{{ items[data.index].mrp_total }}</span>
+
+          <span v-else-if="field.key === 'Unit_Price'">{{ items[data.index].Unit_Price }}</span>
+
+          <b-input type="text" size="sm" v-else-if="field.key === 'discount'" v-model="items[data.index].Discount"
+            :style="{ backgroundColor: items[data.index].ishigh ? '#FFC107' : '' }"
+            @input="(value) =>Calculate(data.index)"> </b-input>
+
+          <span v-else-if="field.key === 'tax'">{{ items[data.index].tax }}</span>
+
+          <span v-else-if="field.key === 'total_value'">{{ items[data.index].Total }}</span>
+        </template>
+
+      </b-table>
+    </div>
+
+    <div>
+      <div style="position: absolute; right: 20%;" id="webAdd2">
+        <table>
+          <tr>
+            <td style="font-size: 1.5em;font-weight: bold;color: #2c3e50;margin-top: 20px;">Grand Total : </td>
+            <td style="font-size: 1.5em;font-weight: bold;color: #2c3e50;margin-top: 20px;">{{ Sum_Total }}</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div>
+      <div class="d-flex justify-content-center" style="bottom: 20%;right: 40%;" id="webAdd1">
+        <b-button variant="primary" style="background-color: 028bfa;" class="button mx-4" id="Cancel"
+          v-on:click="Cancel()">Cancel</b-button>
+        <b-button variant="primary" style="background-color: 028bfa;" class="button2 mx-4" id="saveAsDraft"
+          text="Submit" @click="Savefunc()"> {{ buttonText }}</b-button>
+      </div>
+    </div>
+
+    <b-modal id="Errornotication" no-close-on-backdrop size="lg" title="" v-model="openDialogalert" @hide="displayhide"
+      no-stacking hide-footer>
+      <h5 class="my-2">{{ errorMessage }}</h5>
+    </b-modal>
+
+  </div>
+
+  <!-- Main Vue App -->
+  <script src="main.js">
+  </script>
+</body>
+
+</html>
