@@ -1,0 +1,54 @@
+// Define Organization ID and Connection Name
+organization_id = "YOUR_ORG_ID";
+connection_name = "zoho_inventory_conn";
+
+headers_data = Map();
+headers_data.put("Content-Type", "application/json");
+
+// Define batches
+batch1 = Map();
+batch1.put("batch_number", "BATCH-001");
+batch1.put("quantity", 50);
+batch1.put("rate", 80);
+batch1.put("manufactured_date", "2023-01-01");
+batch1.put("expiry_date", "2024-01-01");
+
+batch2 = Map();
+batch2.put("batch_number", "BATCH-002");
+batch2.put("quantity", 30);
+batch2.put("rate", 80);
+batch2.put("manufactured_date", "2023-02-01");
+batch2.put("expiry_date", "2024-02-01");
+
+batches_list = List();
+batches_list.add(batch1);
+batches_list.add(batch2);
+
+// Define Location
+location_map = Map();
+location_map.put("location_id", "PRIMARY_LOCATION_ID");
+location_map.put("initial_stock", 80);
+location_map.put("initial_stock_rate", 80);
+location_map.put("batches", batches_list);
+
+locations_list = List();
+locations_list.add(location_map);
+
+// Create Item Payload
+item_payload = Map();
+item_payload.put("name", "Batch Tracked Item " + zoho.currenttime.toString("yyyyMMddHHmmss"));
+item_payload.put("rate", 100);
+item_payload.put("track_inventory", true);
+item_payload.put("is_batch_tracked", true); // Enable batch tracking
+item_payload.put("locations", locations_list);
+
+item_response = invokeurl
+[
+    url: "https://www.zohoapis.com/inventory/v1/items?organization_id=" + organization_id
+    type: POST
+    parameters: item_payload.toString()
+    headers: headers_data
+    connection: connection_name
+];
+
+info item_response;
