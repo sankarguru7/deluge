@@ -1,0 +1,51 @@
+organization_id = "60068445763";
+item_id = input.Item_Details_Consumables.Zoho_Inventory_Item_ID;
+info input.Item_Details_Consumables.Zoho_Inventory_Item_ID;
+info item_id;
+
+headers_data = Map();
+headers_data.put("Content-Type","application/json");
+
+// Main Payload for Inventory Adjustment
+payload = Map();
+payload.put("date", zoho.currentdate.toString("yyyy-MM-dd"));
+payload.put("reason", "Batch Stock Created From Creator");
+payload.put("adjustment_type", "quantity"); // Important: required field for adjustment
+
+// Define Line Item which holds the item details and batches
+line_item = Map();
+line_item.put("item_id", item_id);
+line_item.put("quantity_adjusted", input.Item_Details_Consumables.Available_Qty);
+
+batchList = List();
+for each row in input.Add_Batches
+{
+	batchMap = Map();
+	batchMap.put("batch_number", row.Batch_Number);
+	batchMap.put("in_quantity", row.Qty); // in_quantity is correct for positive adjustments
+	// rate might not be strictly necessary for batches in a quantity adjustment, but safe to include
+	batchMap.put("rate", input.Item_Details_Consumables.Price);
+	batchList.add(batchMap);
+}
+
+// Add the batches list to the line item
+line_item.put("batches", batchList);
+
+// Add the single line item to a list
+line_items_list = List();
+line_items_list.add(line_item);
+
+// Add the line items list to the main payload
+payload.put("line_items", line_items_list);
+
+ffurl = "https://www.zohoapis.in/inventory/v1/inventoryadjustments?organization_id=" + organization_id;
+
+response = invokeurl
+[
+	url :ffurl
+	type :POST
+	parameters:payload.toString()
+	headers:headers_data
+	connection:"zinventory"
+];
+info response;
