@@ -1,0 +1,146 @@
+organization_id = "60068445763";
+item_id = input.Item_Details_Consumables.Zoho_Inventory_Item_ID;
+
+headers_data = Map();
+headers_data.put("Content-Type","application/json");
+
+// 1. Fetch existing batches for the item to get their batch_ids and current balance
+batches_url = "https://www.zohoapis.in/inventory/v1/batches?organization_id=" + organization_id + "&item_id=" + item_id;
+batches_resp = invokeurl
+[
+	url :batches_url
+	type :GET
+	headers:headers_data
+	connection:"zinventory"
+];
+
+existing_batches = Map();
+if (batches_resp.get("code") == 0 && batches_resp.get("batches") != null)
+{
+	for each batch in batches_resp.get("batches")
+	{
+		batch_number = batch.get("batch_number");
+		batch_id = batch.get("batch_id");
+		batch_in_id = batch.get("batch_in_id");
+		balance_quantity = batch.get("balance_quantity");
+
+		batch_info = Map();
+		batch_info.put("batch_id", batch_id);
+		batch_info.put("batch_in_id", batch_in_id);
+		batch_info.put("balance_quantity", balance_quantity);
+
+		existing_batches.put(batch_number, batch_info);
+	}
+}
+
+// Prepare adjustment payloads
+positive_batches = List();
+negative_batches = List();
+positive_qty_adj = 0;
+negative_qty_adj = 0;
+
+for each row1 in input.Add_Batches
+{
+	batch_number = row1.Batch_Number;
+	target_qty = row1.Qty;
+
+	if (existing_batches.containKey(batch_number))
+	{
+		// Batch exists, calculate difference
+		existing_info = existing_batches.get(batch_number);
+		batch_id = existing_info.get("batch_id");
+		batch_in_id = existing_info.get("batch_in_id");
+		current_qty = existing_info.get("balance_quantity");
+
+		diff = target_qty - current_qty;
+
+		if (diff > 0)
+		{
+			// Need to add more stock to existing batch
+			batchMap = Map();
+			batchMap.put("batch_id", batch_id);
+			batchMap.put("in_quantity", diff);
+			batchMap.put("rate", input.Item_Details_Consumables.Price);
+			positive_batches.add(batchMap);
+			positive_qty_adj = positive_qty_adj + diff;
+		}
+		else if (diff < 0)
+		{
+			// Need to remove stock from existing batch
+			batchMap = Map();
+			batchMap.put("batch_id", batch_id);
+			batchMap.put("batch_in_id", batch_in_id);
+			batchMap.put("out_quantity", diff * -1);
+			negative_batches.add(batchMap);
+			negative_qty_adj = negative_qty_adj + (diff * -1);
+		}
+	}
+	else
+	{
+		// New batch entirely
+		batchMap = Map();
+		batchMap.put("batch_number", batch_number);
+		batchMap.put("in_quantity", target_qty);
+		batchMap.put("rate", input.Item_Details_Consumables.Price);
+		positive_batches.add(batchMap);
+		positive_qty_adj = positive_qty_adj + target_qty;
+	}
+}
+
+adj_url = "https://www.zohoapis.in/inventory/v1/inventoryadjustments?organization_id=" + organization_id;
+
+// Process Positive Adjustments (Adding Stock)
+if (positive_batches.size() > 0)
+{
+	pos_payload = Map();
+	pos_payload.put("date", zoho.currentdate.toString("yyyy-MM-dd"));
+	pos_payload.put("reason", "Batch Stock Updated From Creator (Positive)");
+	pos_payload.put("adjustment_type", "quantity");
+
+	line_item = Map();
+	line_item.put("item_id", item_id);
+	line_item.put("quantity_adjusted", positive_qty_adj);
+	line_item.put("batches", positive_batches);
+
+	line_items_list = List();
+	line_items_list.add(line_item);
+	pos_payload.put("line_items", line_items_list);
+
+	pos_response = invokeurl
+	[
+		url :adj_url
+		type :POST
+		parameters:pos_payload.toString()
+		headers:headers_data
+		connection:"zinventory"
+	];
+	info pos_response;
+}
+
+// Process Negative Adjustments (Removing Stock)
+if (negative_batches.size() > 0)
+{
+	neg_payload = Map();
+	neg_payload.put("date", zoho.currentdate.toString("yyyy-MM-dd"));
+	neg_payload.put("reason", "Batch Stock Updated From Creator (Negative)");
+	neg_payload.put("adjustment_type", "quantity");
+
+	line_item = Map();
+	line_item.put("item_id", item_id);
+	line_item.put("quantity_adjusted", negative_qty_adj * -1); // Must be negative for out_quantity
+	line_item.put("batches", negative_batches);
+
+	line_items_list = List();
+	line_items_list.add(line_item);
+	neg_payload.put("line_items", line_items_list);
+
+	neg_response = invokeurl
+	[
+		url :adj_url
+		type :POST
+		parameters:neg_payload.toString()
+		headers:headers_data
+		connection:"zinventory"
+	];
+	info neg_response;
+}
