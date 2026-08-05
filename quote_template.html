@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quotation</title>
     <style>
+        #lineitem tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+        }
         body {
             font-family: Arial, sans-serif;
             font-size: 11px;
@@ -178,23 +182,15 @@
     <table class="header-table border-bottom">
         <tr>
             <td class="header-logo">
-                <!-- Replace src with actual logo URL or base64 -->
-                <svg width="120" height="60" viewBox="0 0 120 60">
-                    <rect width="120" height="60" fill="#f4f4f4"/>
-                    <text x="10" y="35" font-family="Arial" font-size="12" fill="#333">Logo Placeholder</text>
-                </svg>
+                <div style="margin-bottom: 5px;">%ScaledLogoImage%</div>
             </td>
             <td class="header-details">
-                <div class="company-name">GIANT EQUIPMENT</div>
-                9A<br>
-                Kishkinta Main road,Sri Moogambigai Nagar<br>
-                Chennai, Kancheepuram,<br>
-                Tamil Nadu - 600045<br>
-                India<br>
-                GSTIN: 33ABCFG1598G1ZG<br>
-                UDYAM-TN-06-0115267<br>
-                8925875200<br>
-                sales@thegiant.in
+                <div class="company-name">%CompanyName%</div>
+                <div id="tmp_org_address" style="white-space: pre-wrap; margin-bottom: 5px;">%CompanyStreetAddress1%<br>%CompanyCity% %CompanyState% %CompanyPostalCode%<br>%CompanyCountry%</div>
+                <div>GSTIN: 33ABCFG1598G1ZG</div>
+                <div>UDYAM-TN-06-0115267</div>
+                <div>8925875200</div>
+                <div>sales@thegiant.in</div>
             </td>
             <td class="title-text">
                 Quotation
@@ -209,11 +205,11 @@
                 <table style="width: 100%;">
                     <tr>
                         <td width="30%">Quotation No</td>
-                        <td width="70%" class="bold-text">: Qo No.64</td>
+                        <td width="70%" class="bold-text">: %EstimateNumber%</td>
                     </tr>
                     <tr>
                         <td>Quote Date</td>
-                        <td class="bold-text">: 04/08/2026</td>
+                        <td class="bold-text">: %EstimateDate%</td>
                     </tr>
                 </table>
             </td>
@@ -221,7 +217,7 @@
                 <table style="width: 100%;">
                     <tr>
                         <td width="30%">Place Of Supply</td>
-                        <td width="70%" class="bold-text">: Tamil Nadu (33)</td>
+                        <td width="70%" class="bold-text">: %PlaceOfSupply%</td>
                     </tr>
                 </table>
             </td>
@@ -230,16 +226,11 @@
 
     <!-- Bill To Section -->
     <div class="border-bottom">
-        <div class="bill-to-title">Bill To</div>
+        <label id="tmp_billing_address_label" class="bill-to-title">Bill To</label>
     </div>
     <div class="border-bottom bill-to-content">
-        ARAVINTH ENGINEERS<br>
-        NO:4/519 3RD STREET NEW TOWN<br>
-        MUTHU NAGAR THIRUVERAMBUR<br>
-        TRICHY<br>
-        620013<br>
-        India<br>
-        GSTIN 33AKDPK7107R1ZV
+        %CustomerName%<br>
+        <span id="tmp_billing_address" style="white-space: pre-wrap; font-weight: normal;">%CustomerBAddress%<br>%CustomerBCity%, %CustomerBState%<br>%CustomerBCountry%</span>
     </div>
 
     <!-- Test Title Row -->
@@ -267,20 +258,22 @@
                 <th>Amt</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="lineitem">
             <tr>
-                <td>1</td>
-                <td class="text-left">End Hose 4 mtr Single Flange Stationary.Pump female 166<br>Part No.: 5001921</td>
-                <td>40092200</td>
-                <td>10.00<br>No's</td>
-                <td class="text-right">19,000.00</td>
-                <td>9%</td>
-                <td class="text-right">17,100.00</td>
-                <td>9%</td>
-                <td class="text-right">17,100.00</td>
-                <td class="text-right">1,90,000.00</td>
+                <td>-</td>
+                <td class="text-left">
+                    <span id="tmp_item_name" style="font-weight: bold; word-wrap: break-word;">%ItemName%</span><br>
+                    <span style="white-space: pre-wrap; overflow-wrap: break-word;">%ItemDescription%</span>
+                </td>
+                <td>%ItemCustomField1%</td>
+                <td><span id="tmp_item_qty">%ItemQty%</span></td>
+                <td class="text-right"><span id="tmp_item_rate">%ItemRate%</span></td>
+                <td>%ItemTax%</td>
+                <td class="text-right">%ItemTaxAmount%</td>
+                <td>%ItemTax%</td>
+                <td class="text-right">%ItemTaxAmount%</td>
+                <td class="text-right">%ItemAmount%</td>
             </tr>
-            <!-- Empty rows to push content down if needed, but keeping it simple as per image -->
         </tbody>
     </table>
 
@@ -289,10 +282,12 @@
         <tr>
             <td class="bottom-left">
                 <div>Total In Words</div>
-                <div class="bold-text" style="font-style: italic;">Indian Rupee Two Lakh Twenty-Four Thousand Two Hundred Only</div>
+                <div class="bold-text" style="font-style: italic;">%TotalInWords%</div>
 
-                <div class="notes-title">Notes</div>
-                <div>TRANSPORT CUSTOMER SCOPE</div>
+                <div class="notes-title">
+                    <label id="tmp_notes_label" style="color: #817d7d; font-weight: bold;">Notes</label>
+                </div>
+                <div style="white-space: pre-wrap; overflow-wrap: break-word; margin-bottom: 15px;">%Notes%</div>
 
                 <div class="account-details">
                     <div>Account Details:</div>
@@ -308,19 +303,17 @@
                 <table class="totals-table">
                     <tr>
                         <td>Sub Total</td>
-                        <td>1,90,000.00</td>
+                        <td id="tmp_subtotal">%EstimateSubTotal%</td>
                     </tr>
-                    <tr>
-                        <td>CGST9 (9%)</td>
-                        <td>17,100.00</td>
-                    </tr>
-                    <tr>
-                        <td>SGST9 (9%)</td>
-                        <td>17,100.00</td>
-                    </tr>
+                    <tbody id="taxItems">
+                        <tr>
+                            <td>%TaxName%</td>
+                            <td>%TaxValue%</td>
+                        </tr>
+                    </tbody>
                     <tr>
                         <td class="total-label">Total</td>
-                        <td class="total-amount">₹2,24,200.00</td>
+                        <td class="total-amount" id="tmp_balance_due"><b>%EstimateTotal%</b></td>
                     </tr>
                 </table>
 
