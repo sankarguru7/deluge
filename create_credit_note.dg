@@ -1,0 +1,46 @@
+// Inputs required to create a credit note from a sales return
+customer_id = "903000000000099";
+organization_id = "10234695";
+
+// Details for the line item to be credited
+item_id = "90300000081501";
+invoice_id = "90300000079426";
+invoice_item_id = 90300000072369; // Need number type for APIs
+salesreturn_item_id = 90300000072369;
+is_item_shipped = true;
+is_returned_to_stock = true;
+
+// Build the line items map
+line_item = Map();
+line_item.put("item_id", item_id);
+line_item.put("invoice_id", invoice_id);
+line_item.put("invoice_item_id", invoice_item_id);
+line_item.put("is_item_shipped", is_item_shipped);
+line_item.put("is_returned_to_stock", is_returned_to_stock);
+line_item.put("salesreturn_item_id", salesreturn_item_id);
+
+line_items = List();
+line_items.add(line_item);
+
+// Build the main payload
+payload = Map();
+payload.put("customer_id", customer_id);
+payload.put("date", zoho.currentdate.toString("yyyy-MM-dd"));
+payload.put("line_items", line_items);
+
+// Make the API call to create the credit note
+headers_data = Map();
+headers_data.put("Content-Type", "application/json");
+
+url = "https://www.zohoapis.com/inventory/v1/creditnotes?organization_id=" + organization_id;
+
+response = invokeurl
+[
+	url : url
+	type : POST
+	parameters : payload.toString()
+	headers : headers_data
+	connection : "<connection_name>"
+];
+
+info response;
