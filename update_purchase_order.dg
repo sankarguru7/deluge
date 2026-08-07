@@ -1,0 +1,97 @@
+// Replace these variables with actual values
+organization_id = "10234695";
+purchaseorder_id = "4815000000044972";
+connection_name = "zoho_inventory_connection"; // Replace with your actual connection name
+
+// Build the payload as a Map
+payload = Map();
+payload.put("purchaseorder_number", "PO-00002");
+payload.put("date", "2015-05-28");
+payload.put("expected_delivery_date", "2015-05-28");
+payload.put("reference_number", "REF-P-00002");
+payload.put("ship_via", "FedEx");
+payload.put("vendor_id", 4815000000044080);
+payload.put("salesorder_id", 4815000000044936);
+payload.put("is_drop_shipment", true);
+
+contact_person = Map();
+contact_person.put("contact_person_id", 4815000000044080);
+comm_pref = Map();
+comm_pref.put("is_email_enabled", true);
+comm_pref.put("is_whatsapp_enabled", true);
+contact_person.put("communication_preference", comm_pref);
+payload.put("contact_persons_associated", {contact_person});
+
+payload.put("attention", "Tony");
+payload.put("delivery_org_address_id", 4815000000044077);
+payload.put("delivery_customer_id", 4815000000044066);
+payload.put("notes", "Sample Note");
+payload.put("terms", "Terms and Conditions");
+payload.put("exchange_rate", 1);
+
+custom_field = Map();
+custom_field.put("customfield_id", "46000000012845");
+custom_field.put("label", "string");
+custom_field.put("value", "Normal");
+payload.put("custom_fields", {custom_field});
+
+line_item = Map();
+line_item.put("item_id", 4815000000044100);
+line_item.put("line_item_id", 4815000000044897);
+line_item.put("account_id", 4815000000035003);
+line_item.put("name", "Laptop-white/15inch/dell");
+line_item.put("description", "Just a sample description.");
+line_item.put("item_order", 0);
+line_item.put("bcy_rate", 122);
+line_item.put("purchase_rate", 122);
+line_item.put("quantity", 2);
+line_item.put("quantity_received", 2);
+line_item.put("unit", "qty");
+line_item.put("item_total", 244);
+line_item.put("tax_id", 4815000000044043);
+line_item.put("tax_name", "Sales Tax");
+line_item.put("tax_type", "tax");
+line_item.put("tax_percentage", 12);
+line_item.put("image_id", 2077500000000002000);
+line_item.put("image_name", "dell.jpg");
+line_item.put("image_type", "jpg");
+line_item.put("reverse_charge_tax_id", 460000000026068);
+line_item.put("hsn_or_sac", "string");
+line_item.put("tax_exemption_code", "string");
+line_item.put("location_id", "460000000038080");
+line_item.put("tax_exemption_id", "string");
+line_item.put("salesorder_item_id", 4815000000044892);
+
+item_custom_field = Map();
+item_custom_field.put("label", "string");
+item_custom_field.put("value", "Normal");
+line_item.put("item_custom_fields", {item_custom_field});
+
+payload.put("line_items", {line_item});
+
+payload.put("location_id", "460000000038080");
+payload.put("gst_treatment", "business_gst");
+payload.put("tax_treatment", "vat_registered");
+payload.put("gst_no", "22AAAAA0000A1Z5");
+payload.put("source_of_supply", "AP");
+payload.put("destination_of_supply", "TN");
+
+// Set headers based on best practices: always include Content-Type application/json
+headers_data = Map();
+headers_data.put("Content-Type", "application/json");
+
+// Construct the API URL
+api_url = "https://www.zohoapis.com/inventory/v1/purchaseorders/" + purchaseorder_id + "?organization_id=" + organization_id;
+
+// Invoke URL using connection (avoiding hardcoded authorization tokens per best practices)
+// Also using .toString() on the payload per best practices
+response = invokeUrl
+[
+	url: api_url
+	type: PUT
+	headers: headers_data
+	parameters: payload.toString()
+	connection: connection_name
+];
+
+info response;
