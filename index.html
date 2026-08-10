@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Dashboard - G3 Lasers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-brand-500 text-white p-2 rounded-lg">
+                    <i class="fas fa-chart-pie text-xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-900">Project Dashboard</h1>
+            </div>
+            <div class="text-sm text-gray-500 font-medium">
+                Last updated: <span id="current-date"></span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+        <!-- Top Summary Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 fade-in" style="animation-delay: 0.1s;">
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 border-l-4 border-l-blue-500">
+                <p class="text-sm font-medium text-gray-500 uppercase tracking-wide">Organization</p>
+                <h2 class="mt-2 text-3xl font-bold text-gray-900">G3 Lasers</h2>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 border-l-4 border-l-green-500">
+                <p class="text-sm font-medium text-gray-500 uppercase tracking-wide">License Details</p>
+                <div class="mt-2 flex items-baseline gap-2">
+                    <h2 class="text-3xl font-bold text-gray-900">3</h2>
+                    <span class="text-sm text-gray-600 font-medium">Licenses</span>
+                </div>
+                <p class="text-xs text-gray-500 mt-1 truncate" title="Zoho one-all employee plan">Zoho one-all employee plan</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 border-l-4 border-l-purple-500">
+                <p class="text-sm font-medium text-gray-500 uppercase tracking-wide">Admin Contact</p>
+                <h2 class="mt-2 text-lg font-bold text-gray-900 truncate" title="vignesh@g3lasers.com">vignesh@g3lasers.com</h2>
+                <p class="text-xs text-gray-500 mt-1">Super Admin / Trial</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 border-l-4 border-l-orange-500">
+                <p class="text-sm font-medium text-gray-500 uppercase tracking-wide">Deal Size</p>
+                <h2 class="mt-2 text-3xl font-bold text-gray-900">x</h2>
+                <p class="text-xs text-gray-500 mt-1">Opportunity Value</p>
+            </div>
+        </div>
+
+        <!-- Middle Section: Requirements & Applications -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 fade-in" style="animation-delay: 0.2s;">
+
+            <!-- Business Requirements -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 lg:col-span-2 overflow-hidden flex flex-col">
+                <div class="bg-gray-50 px-6 py-4 border-b border-gray-100">
+                    <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-clipboard-list text-brand-500 mr-2"></i> Business Requirements
+                    </h3>
+                </div>
+                <div class="p-6 flex-grow">
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium border border-blue-100">Sales flow</span>
+                        <span class="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium border border-blue-100">Tally integration</span>
+                        <span class="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium border border-blue-100">Procurement/Gin process</span>
+                        <span class="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium border border-blue-100">Employee management</span>
+                        <span class="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium border border-blue-100">Support ticket management</span>
+                        <span class="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium border border-blue-100">Payroll</span>
+                        <span class="px-3 py-1.5 bg-blue-50 text-blue-700 rounded-full text-sm font-medium border border-blue-100">FSM</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Apps -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col">
+                <div class="bg-gray-50 px-6 py-4 border-b border-gray-100">
+                    <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                        <i class="fas fa-cubes text-brand-500 mr-2"></i> Current Applications
+                    </h3>
+                </div>
+                <div class="p-6 flex-grow">
+                    <ul class="space-y-3">
+                        <li class="flex items-center text-gray-700"><i class="fas fa-check-circle text-green-500 mr-3"></i> Zoho CRM</li>
+                        <li class="flex items-center text-gray-700"><i class="fas fa-check-circle text-green-500 mr-3"></i> Zoho Books</li>
+                        <li class="flex items-center text-gray-700"><i class="fas fa-check-circle text-green-500 mr-3"></i> Zoho Inventory</li>
+                        <li class="flex items-center text-gray-700"><i class="fas fa-check-circle text-green-500 mr-3"></i> Zoho Creator</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pain Points -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden fade-in" style="animation-delay: 0.3s;">
+            <div class="bg-red-50 px-6 py-4 border-b border-red-100">
+                <h3 class="text-lg font-semibold text-red-800 flex items-center">
+                    <i class="fas fa-exclamation-triangle text-red-500 mr-2"></i> Pain Points
+                </h3>
+            </div>
+            <div class="p-6">
+                <ul class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <li class="flex items-start">
+                        <span class="flex-shrink-0 h-5 w-5 text-red-400 mt-1 mr-3"><i class="fas fa-times-circle"></i></span>
+                        <span class="text-gray-600 text-sm">Fragmented processes across Sales, Purchasing, Inventory, Production, QC, Dispatch, Installation and After-Sales.</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="flex-shrink-0 h-5 w-5 text-red-400 mt-1 mr-3"><i class="fas fa-times-circle"></i></span>
+                        <span class="text-gray-600 text-sm">Limited end-to-end visibility across the complete order-to-delivery cycle.</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="flex-shrink-0 h-5 w-5 text-red-400 mt-1 mr-3"><i class="fas fa-times-circle"></i></span>
+                        <span class="text-gray-600 text-sm">Manual lead follow-ups, approvals, calculations and operational tracking.</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="flex-shrink-0 h-5 w-5 text-red-400 mt-1 mr-3"><i class="fas fa-times-circle"></i></span>
+                        <span class="text-gray-600 text-sm">Difficulty in managing device allocation and tracking across customers/orders.</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="flex-shrink-0 h-5 w-5 text-red-400 mt-1 mr-3"><i class="fas fa-times-circle"></i></span>
+                        <span class="text-gray-600 text-sm">Complex landing cost calculations and other business-specific calculations that require customized logic.</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="flex-shrink-0 h-5 w-5 text-red-400 mt-1 mr-3"><i class="fas fa-times-circle"></i></span>
+                        <span class="text-gray-600 text-sm">Manual handling of sales returns, including return requests, approvals, stock updates and financial coordination.</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="flex-shrink-0 h-5 w-5 text-red-400 mt-1 mr-3"><i class="fas fa-times-circle"></i></span>
+                        <span class="text-gray-600 text-sm">Limited integration between inventory, production, QC, dispatch and customer service.</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="flex-shrink-0 h-5 w-5 text-red-400 mt-1 mr-3"><i class="fas fa-times-circle"></i></span>
+                        <span class="text-gray-600 text-sm">Manual purchasing, vendor comparison and approval processes.</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="flex-shrink-0 h-5 w-5 text-red-400 mt-1 mr-3"><i class="fas fa-times-circle"></i></span>
+                        <span class="text-gray-600 text-sm">Limited real-time management dashboards and operational MIS.</span>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="flex-shrink-0 h-5 w-5 text-red-400 mt-1 mr-3"><i class="fas fa-times-circle"></i></span>
+                        <span class="text-gray-600 text-sm">Multiple manual documents and workflows resulting in duplication and potential data errors.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Solution Mapping -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden fade-in" style="animation-delay: 0.4s;">
+            <div class="bg-brand-50 px-6 py-4 border-b border-brand-100 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <h3 class="text-lg font-semibold text-brand-900 flex items-center">
+                    <i class="fas fa-project-diagram text-brand-500 mr-2"></i> Recommended Zoho Solutions
+                </h3>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <i class="fas fa-search text-gray-400"></i>
+                    </div>
+                    <input type="text" id="searchInput" class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-brand-500 focus:border-brand-500 w-full sm:w-64" placeholder="Filter solutions...">
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200" id="solutionsTable">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/2">Business Area</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/2">Recommended Zoho Solution</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200 text-sm">
+                        <!-- Rows -->
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">Lead & Sales Management</td>
+                            <td class="px-6 py-4 text-gray-600">Zoho CRM, Forms, SalesIQ, Campaigns</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">Proposal & Quotations</td>
+                            <td class="px-6 py-4 text-gray-600">Zoho CRM, Writer, Sign</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">Purchasing</td>
+                            <td class="px-6 py-4 text-gray-600">Zoho Inventory, Books, Creator</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">Vendor Management</td>
+                            <td class="px-6 py-4 text-gray-600">Zoho CRM, Inventory</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">Inventory & Warehouse</td>
+                            <td class="px-6 py-4 text-gray-600">Zoho Inventory</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">Device Allocation</td>
+                            <td class="px-6 py-4 text-gray-600">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mr-2">Zoho Creator</span>
+                                Custom Device Allocation
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">Landing Cost Calculation</td>
+                            <td class="px-6 py-4 text-gray-600">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mr-2">Zoho Creator</span>
+                                Custom Costing Logic
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">Custom Business Calculations</td>
+                            <td class="px-6 py-4 text-gray-600">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mr-2">Zoho Creator</span>
+                                Custom Functions / Deluge
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">GRN & Inspection</td>
+                            <td class="px-6 py-4 text-gray-600">Zoho Inventory + Creator</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">Production Management</td>
+                            <td class="px-6 py-4 text-gray-600">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mr-2">Zoho Creator</span>
+                                Custom Production Module
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">Quality Control</td>
+                            <td class="px-6 py-4 text-gray-600">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mr-2">Zoho Creator</span>
+                                QC Workflow
+                            </td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">Dispatch & Logistics</td>
+                            <td class="px-6 py-4 text-gray-600">Zoho Inventory + Books</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">Installation & Field Service</td>
+                            <td class="px-6 py-4 text-gray-600">Zoho Projects, People, Creator</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">Sales Return Management</td>
+                            <td class="px-6 py-4 text-gray-600">Zoho Creator + Inventory + Books</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">RMA & After-Sales</td>
+                            <td class="px-6 py-4 text-gray-600">Zoho Desk, CRM, Inventory</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">Customer Feedback</td>
+                            <td class="px-6 py-4 text-gray-600">Zoho Forms/Survey, CRM, Campaigns</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">Finance & Accounting</td>
+                            <td class="px-6 py-4 text-gray-600">Zoho Books, Expense</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">HR & Workforce</td>
+                            <td class="px-6 py-4 text-gray-600">Zoho People, Recruit</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">Analytics & MIS</td>
+                            <td class="px-6 py-4 text-gray-600">Zoho Analytics</td>
+                        </tr>
+                        <tr class="hover:bg-gray-50 transition-colors">
+                            <td class="px-6 py-4 whitespace-nowrap font-medium text-gray-900">Automation & Integration</td>
+                            <td class="px-6 py-4 text-gray-600">Zoho Flow + Deluge</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Empty State for Search -->
+            <div id="noResultsMessage" class="hidden p-8 text-center text-gray-500">
+                <i class="fas fa-search-minus text-3xl mb-3 text-gray-300"></i>
+                <p>No matching solutions found.</p>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-white border-t border-gray-200 mt-8 py-6 text-center text-sm text-gray-500">
+        <p>Dashboard generated for G3 Lasers project analysis.</p>
+    </footer>
+
+    <script>
+        // Set current date
+        const dateOptions = { year: 'numeric', month: 'short', day: 'numeric' };
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', dateOptions);
+
+        // Search/Filter functionality
+        const searchInput = document.getElementById('searchInput');
+        const table = document.getElementById('solutionsTable');
+        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        const noResultsMsg = document.getElementById('noResultsMessage');
+
+        searchInput.addEventListener('input', function() {
+            const filter = this.value.toLowerCase();
+            let hasVisibleRow = false;
+
+            for (let i = 0; i < rows.length; i++) {
+                const cell1 = rows[i].getElementsByTagName('td')[0].textContent;
+                const cell2 = rows[i].getElementsByTagName('td')[1].textContent;
+
+                if (cell1.toLowerCase().indexOf(filter) > -1 || cell2.toLowerCase().indexOf(filter) > -1) {
+                    rows[i].style.display = '';
+                    hasVisibleRow = true;
+                } else {
+                    rows[i].style.display = 'none';
+                }
+            }
+
+            if (!hasVisibleRow && filter.length > 0) {
+                table.style.display = 'none';
+                noResultsMsg.classList.remove('hidden');
+            } else {
+                table.style.display = '';
+                noResultsMsg.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
