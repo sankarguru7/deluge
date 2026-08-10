@@ -1,80 +1,253 @@
 // Replace these variables with actual values
-organization_id = "10234695";
-purchaseorder_id = "4815000000044972";
+organization_id = "10234695"; // Replace with your org id
 connection_name = "zoho_inventory_connection"; // Replace with your actual connection name
 
-// Build the payload as a Map
+// Simulated response data from GET Purchase Order API as provided
+po_data = {
+  "code": 0,
+  "message": "success",
+  "purchaseorder": {
+    "purchaseorder_id": "6174853000000743049",
+    "non_catalog_items_count": 0,
+    "branch_id": "6174853000000474012",
+    "branch_name": "Chennai",
+    "location_id": "6174853000000474012",
+    "location_name": "Chennai",
+    "documents": [],
+    "tax_treatment": "business_none",
+    "gst_no": "",
+    "contact_category": "business_none",
+    "gst_treatment": "business_none",
+    "purchaseorder_number": "PO-00003",
+    "date": "2026-07-25",
+    "client_viewed_time": "",
+    "is_viewed_by_client": false,
+    "is_pre_gst": false,
+    "expected_delivery_date": "",
+    "reference_number": "",
+    "status": "open",
+    "order_status": "open",
+    "received_status": "partially_received",
+    "billed_status": "to_be_billed",
+    "color_code": "",
+    "current_sub_status_id": "",
+    "current_sub_status": "open",
+    "sub_statuses": [],
+    "source_of_supply": "TN",
+    "destination_of_supply": "TN",
+    "vendor_id": "6174853000000178639",
+    "vendor_name": "Vendor 1",
+    "contact_persons": [],
+    "contact_persons_associated": [],
+    "currency_id": "6174853000000000099",
+    "currency_code": "INR",
+    "currency_symbol": "₹",
+    "exchange_rate": 1.0,
+    "delivery_date": "",
+    "is_emailed": false,
+    "is_inclusive_tax": false,
+    "tax_rounding": "entity_level",
+    "is_reverse_charge_applied": false,
+    "is_adv_tracking_in_receive": false,
+    "is_po_marked_as_received": false,
+    "total_quantity": 42.0,
+    "tds_calculation_type": "tds_item_level",
+    "line_items": [
+      {
+        "item_id": "6174853000000243083",
+        "line_item_id": "6174853000000743052",
+        "salesorder_item_id": "",
+        "image_document_id": "",
+        "sku": "unit",
+        "account_id": "6174853000000153015",
+        "account_name": "Finished Goods",
+        "account_code": "",
+        "name": "cosmetics",
+        "description": "",
+        "item_order": 1,
+        "is_receivable": true,
+        "bcy_rate": 10000.0,
+        "pricebook_id": "",
+        "header_id": "",
+        "header_name": "",
+        "line_item_category": "line_item",
+        "rate": 10000.0,
+        "quantity": 31.0,
+        "discount": 0.0,
+        "discounts": [],
+        "quantity_marked_as_received": 0.0,
+        "quantity_cancelled": 0.0,
+        "quantity_billed": 0.0,
+        "unit": "Quantity",
+        "item_total": 310000.0,
+        "tax_exemption_id": "",
+        "tax_exemption_code": "",
+        "tax_category_code": "",
+        "tax_category_name": "",
+        "gst_treatment_code": "",
+        "tax_id": "",
+        "tax_name": "",
+        "tax_type": "tax",
+        "tax_percentage": 0,
+        "tds_tax_id": "",
+        "tds_tax_name": "",
+        "tds_tax_percentage": "",
+        "tds_tax_amount": 0.0,
+        "product_type": "goods",
+        "item_type": "inventory",
+        "line_item_taxes": [],
+        "line_item_tds": [],
+        "is_tax_calculation_on_label_price": false,
+        "hsn_or_sac": "330499",
+        "item_code": {},
+        "reverse_charge_tax_id": "",
+        "tags": [],
+        "item_custom_fields": [],
+        "project_id": "",
+        "image_name": "",
+        "image_type": "",
+        "track_serial_for_receive": false,
+        "track_batch_for_receive": false,
+        "track_serial_number": false,
+        "track_batch_number": true,
+        "purchase_request_items": [],
+        "location_id": "6174853000000474012",
+        "location_name": "Chennai",
+        "product_tax_category": {
+          "tax_category_code": "",
+          "tax_category_name": "",
+          "description": ""
+        }
+      },
+      {
+        "item_id": "6174853000000472025",
+        "line_item_id": "6174853000000743053",
+        "salesorder_item_id": "",
+        "image_document_id": "",
+        "sku": "TD4.5",
+        "account_id": "6174853000000153015",
+        "account_name": "Finished Goods",
+        "account_code": "",
+        "name": "TRANSDUCER",
+        "description": "",
+        "item_order": 2,
+        "is_receivable": true,
+        "bcy_rate": 170000.0,
+        "pricebook_id": "",
+        "header_id": "",
+        "header_name": "",
+        "line_item_category": "line_item",
+        "rate": 170000.0,
+        "quantity": 11.0,
+        "discount": 0.0,
+        "discounts": [],
+        "quantity_marked_as_received": 0.0,
+        "quantity_cancelled": 0.0,
+        "quantity_billed": 0.0,
+        "unit": "pcs",
+        "item_total": 1870000.0,
+        "tax_exemption_id": "",
+        "tax_exemption_code": "",
+        "tax_category_code": "",
+        "tax_category_name": "",
+        "gst_treatment_code": "",
+        "tax_id": "",
+        "tax_name": "",
+        "tax_type": "tax",
+        "tax_percentage": 0,
+        "tds_tax_id": "",
+        "tds_tax_name": "",
+        "tds_tax_percentage": "",
+        "tds_tax_amount": 0.0,
+        "product_type": "goods",
+        "item_type": "inventory",
+        "line_item_taxes": [],
+        "line_item_tds": [],
+        "is_tax_calculation_on_label_price": false,
+        "hsn_or_sac": "901850",
+        "item_code": {},
+        "reverse_charge_tax_id": "",
+        "tags": [],
+        "item_custom_fields": [],
+        "project_id": "",
+        "image_name": "",
+        "image_type": "",
+        "track_serial_for_receive": false,
+        "track_batch_for_receive": false,
+        "track_serial_number": true,
+        "track_batch_number": false,
+        "purchase_request_items": [],
+        "location_id": "6174853000000474012",
+        "location_name": "Chennai",
+        "product_tax_category": {
+          "tax_category_code": "",
+          "tax_category_name": "",
+          "description": ""
+        }
+      }
+    ]
+  }
+};
+
+purchaseorder = po_data.get("purchaseorder");
+purchaseorder_id = purchaseorder.get("purchaseorder_id");
+
+// Build the update payload as a Map
 payload = Map();
-payload.put("purchaseorder_number", "PO-00002");
-payload.put("date", "2015-05-28");
-payload.put("expected_delivery_date", "2015-05-28");
-payload.put("reference_number", "REF-P-00002");
-payload.put("ship_via", "FedEx");
-payload.put("vendor_id", 4815000000044080);
-payload.put("salesorder_id", 4815000000044936);
-payload.put("is_drop_shipment", true);
+payload.put("purchaseorder_number", purchaseorder.get("purchaseorder_number"));
+payload.put("date", purchaseorder.get("date"));
+payload.put("expected_delivery_date", purchaseorder.get("expected_delivery_date"));
+payload.put("reference_number", purchaseorder.get("reference_number"));
+payload.put("vendor_id", purchaseorder.get("vendor_id"));
+payload.put("attention", purchaseorder.get("attention"));
+payload.put("delivery_org_address_id", purchaseorder.get("delivery_org_address_id"));
+payload.put("delivery_customer_id", purchaseorder.get("delivery_customer_id"));
+payload.put("notes", purchaseorder.get("notes"));
+payload.put("terms", purchaseorder.get("terms"));
+payload.put("exchange_rate", purchaseorder.get("exchange_rate"));
 
-contact_person = Map();
-contact_person.put("contact_person_id", 4815000000044080);
-comm_pref = Map();
-comm_pref.put("is_email_enabled", true);
-comm_pref.put("is_whatsapp_enabled", true);
-contact_person.put("communication_preference", comm_pref);
-payload.put("contact_persons_associated", {contact_person});
+// Extract line items from fetched data and prepare with for each loop
+fetched_line_items = purchaseorder.get("line_items");
+updated_line_items = List();
 
-payload.put("attention", "Tony");
-payload.put("delivery_org_address_id", 4815000000044077);
-payload.put("delivery_customer_id", 4815000000044066);
-payload.put("notes", "Sample Note");
-payload.put("terms", "Terms and Conditions");
-payload.put("exchange_rate", 1);
+for each  item in fetched_line_items
+{
+	line_item = Map();
+	line_item.put("item_id", item.get("item_id"));
+	line_item.put("line_item_id", item.get("line_item_id"));
+	line_item.put("account_id", item.get("account_id"));
+	line_item.put("name", item.get("name"));
+	line_item.put("description", item.get("description"));
+	line_item.put("item_order", item.get("item_order"));
+	line_item.put("bcy_rate", item.get("bcy_rate"));
+	line_item.put("purchase_rate", item.get("rate")); // rate is usually mapped to purchase_rate
+	line_item.put("quantity", item.get("quantity"));
+	line_item.put("unit", item.get("unit"));
+	line_item.put("item_total", item.get("item_total"));
 
-custom_field = Map();
-custom_field.put("customfield_id", "46000000012845");
-custom_field.put("label", "string");
-custom_field.put("value", "Normal");
-payload.put("custom_fields", {custom_field});
+	// Add optional tax details if present
+	if(item.get("tax_id") != "")
+	{
+		line_item.put("tax_id", item.get("tax_id"));
+		line_item.put("tax_name", item.get("tax_name"));
+		line_item.put("tax_type", item.get("tax_type"));
+		line_item.put("tax_percentage", item.get("tax_percentage"));
+	}
 
-line_item = Map();
-line_item.put("item_id", 4815000000044100);
-line_item.put("line_item_id", 4815000000044897);
-line_item.put("account_id", 4815000000035003);
-line_item.put("name", "Laptop-white/15inch/dell");
-line_item.put("description", "Just a sample description.");
-line_item.put("item_order", 0);
-line_item.put("bcy_rate", 122);
-line_item.put("purchase_rate", 122);
-line_item.put("quantity", 2);
-line_item.put("quantity_received", 2);
-line_item.put("unit", "qty");
-line_item.put("item_total", 244);
-line_item.put("tax_id", 4815000000044043);
-line_item.put("tax_name", "Sales Tax");
-line_item.put("tax_type", "tax");
-line_item.put("tax_percentage", 12);
-line_item.put("image_id", 2077500000000002000);
-line_item.put("image_name", "dell.jpg");
-line_item.put("image_type", "jpg");
-line_item.put("reverse_charge_tax_id", 460000000026068);
-line_item.put("hsn_or_sac", "string");
-line_item.put("tax_exemption_code", "string");
-line_item.put("location_id", "460000000038080");
-line_item.put("tax_exemption_id", "string");
-line_item.put("salesorder_item_id", 4815000000044892);
+	line_item.put("hsn_or_sac", item.get("hsn_or_sac"));
+	line_item.put("location_id", item.get("location_id"));
 
-item_custom_field = Map();
-item_custom_field.put("label", "string");
-item_custom_field.put("value", "Normal");
-line_item.put("item_custom_fields", {item_custom_field});
+	updated_line_items.add(line_item);
+}
 
-payload.put("line_items", {line_item});
+payload.put("line_items", updated_line_items);
 
-payload.put("location_id", "460000000038080");
-payload.put("gst_treatment", "business_gst");
-payload.put("tax_treatment", "vat_registered");
-payload.put("gst_no", "22AAAAA0000A1Z5");
-payload.put("source_of_supply", "AP");
-payload.put("destination_of_supply", "TN");
+payload.put("location_id", purchaseorder.get("location_id"));
+payload.put("gst_treatment", purchaseorder.get("gst_treatment"));
+payload.put("tax_treatment", purchaseorder.get("tax_treatment"));
+payload.put("gst_no", purchaseorder.get("gst_no"));
+payload.put("source_of_supply", purchaseorder.get("source_of_supply"));
+payload.put("destination_of_supply", purchaseorder.get("destination_of_supply"));
 
 // Set headers based on best practices: always include Content-Type application/json
 headers_data = Map();
