@@ -196,12 +196,21 @@ purchaseorder_id = purchaseorder.get("purchaseorder_id");
 payload = Map();
 payload.put("purchaseorder_number", purchaseorder.get("purchaseorder_number"));
 payload.put("date", purchaseorder.get("date"));
-payload.put("expected_delivery_date", purchaseorder.get("expected_delivery_date"));
+if(purchaseorder.get("expected_delivery_date") != "")
+{
+	payload.put("expected_delivery_date", purchaseorder.get("expected_delivery_date"));
+}
 payload.put("reference_number", purchaseorder.get("reference_number"));
 payload.put("vendor_id", purchaseorder.get("vendor_id"));
 payload.put("attention", purchaseorder.get("attention"));
-payload.put("delivery_org_address_id", purchaseorder.get("delivery_org_address_id"));
-payload.put("delivery_customer_id", purchaseorder.get("delivery_customer_id"));
+if(purchaseorder.get("delivery_org_address_id") != "")
+{
+	payload.put("delivery_org_address_id", purchaseorder.get("delivery_org_address_id"));
+}
+if(purchaseorder.get("delivery_customer_id") != "")
+{
+	payload.put("delivery_customer_id", purchaseorder.get("delivery_customer_id"));
+}
 payload.put("notes", purchaseorder.get("notes"));
 payload.put("terms", purchaseorder.get("terms"));
 payload.put("exchange_rate", purchaseorder.get("exchange_rate"));
@@ -235,7 +244,10 @@ for each  item in fetched_line_items
 	}
 
 	line_item.put("hsn_or_sac", item.get("hsn_or_sac"));
-	line_item.put("location_id", item.get("location_id"));
+	if(item.get("location_id") != "")
+	{
+		line_item.put("location_id", item.get("location_id"));
+	}
 
 	updated_line_items.add(line_item);
 }
