@@ -1,0 +1,26 @@
+// Define variables for search criteria
+customerId = "1234567890"; // Replace with actual customer ID
+startDate = "2024-02-01"; // Replace with actual start date (yyyy-mm-dd)
+endDate = "2024-02-20"; // Replace with actual end date (yyyy-mm-dd)
+orgId = "10234695"; // Replace with actual organization ID
+
+// Construct the parameters map
+params = Map();
+params.put("organization_id", orgId);
+params.put("customer_id", customerId);
+// Using due_date_start and due_date_end as confirmed by API documentation variants
+params.put("due_date_start", startDate);
+params.put("due_date_end", endDate);
+
+// Call Zoho Inventory API to list invoices
+// Make sure to replace "zoho_inventory_connection" with your actual connection name
+response = invokeurl
+[
+	url :"https://www.zohoapis.com/inventory/v1/invoices"
+	type :GET
+	parameters :params
+	connection :"zoho_inventory_connection"
+];
+
+// Output the response
+info response;
