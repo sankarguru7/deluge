@@ -1,0 +1,246 @@
+// JSON Data Input (Assume this is passed as an argument or fetched)
+// In a real function, 'jsonDataStr' could be a string argument.
+jsonDataStr = "{\"Uncategorized\":[{\"row_index\":1,\"col_1\":\"Description: HVAC Bill of Materials\"},{\"row_index\":2,\"col_1\":\"* This BOQ is for preliminary estimation only...\"}], \"VRF System\":[{\"row_index\":7,\"col_1\":\"1\",\"col_2\":\"VRF SYSTEM - Heat pump system\",\"col_9\":\"VRF System\"}]}";
+jsonMap = jsonDataStr.toMap();
+workbookName = "HVAC_BOQ";
+
+// 1. Create Workbook
+createUrl = "https://sheet.zoho.in/api/v2/create";
+createParams = Map();
+createParams.put("method", "workbook.create");
+createParams.put("workbook_name", workbookName);
+
+wbResponse = invokeurl
+[
+    url: createUrl
+    type: POST
+    parameters: createParams
+    connection: "zohosheet_connection"
+];
+
+info "Create Workbook Response: " + wbResponse;
+
+if(wbResponse.containKey("resource_id"))
+{
+    resourceId = wbResponse.get("resource_id");
+    defaultSheetName = ifnull(wbResponse.get("worksheet_name"), "Sheet1");
+
+    sheetNamesList = jsonMap.keys();
+
+    if(sheetNamesList.size() > 0)
+    {
+        firstSheetName = sheetNamesList.get(0);
+
+        // 2. Rename Default Sheet
+        renameUrl = "https://sheet.zoho.in/api/v2/" + resourceId;
+        renameParams = Map();
+        renameParams.put("method", "worksheet.rename");
+        renameParams.put("old_name", defaultSheetName);
+        renameParams.put("new_name", firstSheetName);
+
+        renameResp = invokeurl
+        [
+            url: renameUrl
+            type: POST
+            parameters: renameParams
+            connection: "zohosheet_connection"
+        ];
+        info "Rename Sheet Resp: " + renameResp;
+
+        // 3. Create Additional Sheets
+        sheetIndex = 0;
+        for each sheetName in sheetNamesList
+        {
+            if (sheetIndex > 0)
+            {
+                insertParams = Map();
+                insertParams.put("method", "worksheet.insert");
+                insertParams.put("worksheet_name", sheetName);
+
+                insertResp = invokeurl
+                [
+                    url: renameUrl
+                    type: POST
+                    parameters: insertParams
+                    connection: "zohosheet_connection"
+                ];
+                info "Insert Sheet Resp for " + sheetName + ": " + insertResp;
+            }
+            sheetIndex = sheetIndex + 1;
+        }
+
+        // 4. Set Header Row (Row 6) using cells.content.set
+        headerCells = List();
+        headerCells.add({"column":1, "content":"S. No"});
+        headerCells.add({"column":2, "content":"Description"});
+        headerCells.add({"column":3, "content":"Checklist"});
+        headerCells.add({"column":4, "content":"Unit "});
+        headerCells.add({"column":5, "content":"QTY"});
+        headerCells.add({"column":6, "content":"Supply Rate"});
+        headerCells.add({"column":7, "content":"Installation Rate"});
+        headerCells.add({"column":8, "content":"Amount"});
+        headerCells.add({"column":9, "content":"Remarks"});
+
+        for each sheetName in sheetNamesList
+        {
+            // Prepare a specific list of maps for this sheet to ensure correct JSON serialization
+            sheetHeaderCells = List();
+            for each cell in headerCells
+            {
+                colNum = cell.get("column");
+                contentVal = cell.get("content");
+
+                cellObj = Map();
+                cellObj.put("row", 6);
+                cellObj.put("column", colNum);
+                cellObj.put("worksheet_name", sheetName);
+                cellObj.put("content", contentVal);
+                sheetHeaderCells.add(cellObj);
+            }
+
+            headerParams = Map();
+            headerParams.put("method", "cells.content.set");
+            headerParams.put("data", sheetHeaderCells.toString());
+
+            headerResp = invokeurl
+            [
+                url: renameUrl
+                type: POST
+                parameters: headerParams
+                connection: "zohosheet_connection"
+            ];
+            info "Header Row Set Resp for " + sheetName + ": " + headerResp;
+        }
+
+        // Column mapping based on user specifications
+        colMap = Map();
+        colMap.put("1", "S. No");
+        colMap.put("2", "Description");
+        colMap.put("3", "Checklist");
+        colMap.put("4", "Unit ");
+        colMap.put("5", "QTY");
+        colMap.put("6", "Supply Rate");
+        colMap.put("7", "Installation Rate");
+        colMap.put("8", "Amount");
+        colMap.put("9", "Remarks");
+
+        // 5. Add records to worksheet API
+        for each sheetName in sheetNamesList
+        {
+            sheetRows = jsonMap.get(sheetName);
+            rowUpdates = List();
+
+            for each rowData in sheetRows
+            {
+                if(rowData.containKey("row_index"))
+                {
+                    keysList = rowData.keys();
+                    rowObj = Map();
+
+                    for each key in keysList
+                    {
+                        if(key.startsWith("col_"))
+                        {
+                            colIndexStr = key.remove("col_");
+                            val = rowData.get(key);
+
+                            if(colMap.containKey(colIndexStr))
+                            {
+                                headerName = colMap.get(colIndexStr);
+                                rowObj.put(headerName, val);
+                            }
+                        }
+                    }
+                    if(rowObj.size() > 0)
+                    {
+                        rowUpdates.add(rowObj);
+                    }
+                }
+            }
+
+            // Chunk row updates to respect API limits (max 1000 records per call)
+            chunkSize = 1000;
+            currentChunkStr = "[";
+            chunkCount = 0;
+
+            for each rowObj in rowUpdates
+            {
+                if(chunkCount > 0)
+                {
+                    currentChunkStr = currentChunkStr + ",";
+                }
+
+                // Build robust JSON string for map, properly escaping special characters
+                rowJsonStr = "{";
+                keyCount = 0;
+                for each headerKey in rowObj.keys()
+                {
+                    if(keyCount > 0)
+                    {
+                        rowJsonStr = rowJsonStr + ",";
+                    }
+                    valStr = rowObj.get(headerKey).toString();
+
+                    // Escape backslashes, newlines, carriage returns, and double quotes
+                    // In Deluge string literals, "\\\\" resolves to "\\" for the regex engine, matching a literal "\"
+                    valStr = valStr.replaceAll("\\\\", "\\\\\\\\");
+                    valStr = valStr.replaceAll("\n", "\\n");
+                    valStr = valStr.replaceAll("\r", "\\r");
+                    valStr = valStr.replaceAll("\"", "\\\"");
+
+                    rowJsonStr = rowJsonStr + "\"" + headerKey + "\":\"" + valStr + "\"";
+                    keyCount = keyCount + 1;
+                }
+                rowJsonStr = rowJsonStr + "}";
+
+                currentChunkStr = currentChunkStr + rowJsonStr;
+                chunkCount = chunkCount + 1;
+
+                if(chunkCount >= chunkSize)
+                {
+                    currentChunkStr = currentChunkStr + "]";
+                    setParams = Map();
+                    setParams.put("method", "worksheet.records.add");
+                    setParams.put("worksheet_name", sheetName);
+                    setParams.put("header_row", 6);
+                    setParams.put("json_data", currentChunkStr);
+
+                    setResp = invokeurl
+                    [
+                        url: renameUrl
+                        type: POST
+                        parameters: setParams
+                        connection: "zohosheet_connection"
+                    ];
+                    info "Add Records Resp for " + sheetName + " (chunk): " + setResp;
+                    currentChunkStr = "[";
+                    chunkCount = 0;
+                }
+            }
+
+            // Process any remaining rows in the last chunk
+            if(chunkCount > 0)
+            {
+                currentChunkStr = currentChunkStr + "]";
+                setParams = Map();
+                setParams.put("method", "worksheet.records.add");
+                setParams.put("worksheet_name", sheetName);
+                setParams.put("header_row", 6);
+                setParams.put("json_data", currentChunkStr);
+
+                setResp = invokeurl
+                [
+                    url: renameUrl
+                    type: POST
+                    parameters: setParams
+                    connection: "zohosheet_connection"
+                ];
+                info "Add Records Resp for " + sheetName + " (final chunk): " + setResp;
+            }
+        }
+    }
+}
+else
+{
+    info "Error: Failed to create workbook. Check response.";
+}
