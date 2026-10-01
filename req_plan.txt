@@ -1,12 +1,2 @@
-1. Write a script `zoho_sheet_uploader.py` to parse the provided JSON data (sub tables mapping main keys to arrays of cell objects) and create Zoho sheets using Zoho Sheet API v2.
-2. The user has provided `json_data` containing keys representing sheet/category names (`Uncategorized`, `VRF System`, `TFA`, `Ref CU Pipe`, `Split Units`, `Copper kit not inclusive`, `Timers`, `Drain Pipe`, `Fan`, `Ducting`, `Insulation`, `ADP`, `Fire Damper`, `Electrical `, `Cable Tray`).
-3. We will simulate inserting these as separate worksheets within a single new Zoho Sheet Workbook, or create a workbook and then populate the first sheet + create/rename subsequent sheets.
-4. From the API docs we explored:
-    * `workbook.create` -> `POST https://sheet.zoho.in/api/v2/create` with `method=workbook.create` & `workbook_name`.
-    * To append or set cell content, we can use `worksheet.jsondata.append` or `cell.content.set` or `worksheet.csvdata.set` or `cells.content.set`.
-    * Because the JSON contains `"row_index"` and `"col_1"`, etc., we will likely need to format the data into a JSON structure, or iterate and use `cells.content.set`.
-    * Actually, `cells.content.set` allows setting multiple discontinuous cells. It takes a JSON Array `data` like: `[{"worksheet_id":"...", "content":"...", "row": 1, "column": 1}, ...]`.
-    * `worksheet.insert` -> method `worksheet.insert`, `worksheet_name`.
-    * Let's put this logic into a python script that clearly defines a class or function to interact with Zoho Sheets given an OAuth Token (which the user would provide).
-    * We'll add a dummy auth token or mock it so it can be easily replaced by the user.
-    * Let's request plan review for this script.
+1. The user wants to use `table.records.add` or `worksheet.jsondata.append` instead of `cells.content.set`.
+2. Wait, the user specifically mentioned `Add records to table` (`table.records.add`) but tables in Zoho sheets need to exist, OR we can just use `worksheet.jsondata.append` (or `worksheet.records.add`?). Actually, the API says "Add records to table" (method: `table.records.add`) requires `table_name` or `table_id`. If we just created the worksheet, it doesn't have a table explicitly defined yet. BUT maybe they mean `worksheet.records.add`? Let me check the docs. Wait, there's `Add records to worksheet` (`worksheet.records.add`).

@@ -48,11 +48,11 @@ if(wbResponse.containKey("resource_id"))
         info "Rename Sheet Resp: " + renameResp;
 
         // 3. Create Additional Sheets
-        for each index i in sheetNamesList
+        sheetIndex = 0;
+        for each sheetName in sheetNamesList
         {
-            if (i > 0)
+            if (sheetIndex > 0)
             {
-                sheetName = sheetNamesList.get(i);
                 insertParams = Map();
                 insertParams.put("method", "worksheet.insert");
                 insertParams.put("worksheet_name", sheetName);
@@ -66,55 +66,142 @@ if(wbResponse.containKey("resource_id"))
                 ];
                 info "Insert Sheet Resp for " + sheetName + ": " + insertResp;
             }
+            sheetIndex = sheetIndex + 1;
         }
 
-        // 4. Set Cells Content
+        // 4. Set Header Row (Row 6) using cells.content.set
+        headerCells = List();
+        headerCells.add({"column":1, "content":"S. No"});
+        headerCells.add({"column":2, "content":"Description"});
+        headerCells.add({"column":3, "content":"Checklist"});
+        headerCells.add({"column":4, "content":"Unit "});
+        headerCells.add({"column":5, "content":"QTY"});
+        headerCells.add({"column":6, "content":"Supply Rate"});
+        headerCells.add({"column":7, "content":"Installation Rate"});
+        headerCells.add({"column":8, "content":"Amount"});
+        headerCells.add({"column":9, "content":"Remarks"});
+
+        for each sheetName in sheetNamesList
+        {
+            // Build JSON string manually to avoid toString issues
+            headerJsonStr = "[";
+            cellCount = 0;
+            for each cell in headerCells
+            {
+                if(cellCount > 0)
+                {
+                    headerJsonStr = headerJsonStr + ",";
+                }
+                colNum = cell.get("column");
+                contentVal = cell.get("content");
+                headerJsonStr = headerJsonStr + "{\"row\":6,\"column\":" + colNum + ",\"worksheet_name\":\"" + sheetName + "\",\"content\":\"" + contentVal + "\"}";
+                cellCount = cellCount + 1;
+            }
+            headerJsonStr = headerJsonStr + "]";
+
+            headerParams = Map();
+            headerParams.put("method", "cells.content.set");
+            headerParams.put("data", headerJsonStr);
+
+            headerResp = invokeurl
+            [
+                url: renameUrl
+                type: POST
+                parameters: headerParams
+                connection: "zohosheet_connection"
+            ];
+            info "Header Row Set Resp for " + sheetName + ": " + headerResp;
+        }
+
+        // Column mapping based on user specifications
+        colMap = Map();
+        colMap.put("1", "S. No");
+        colMap.put("2", "Description");
+        colMap.put("3", "Checklist");
+        colMap.put("4", "Unit ");
+        colMap.put("5", "QTY");
+        colMap.put("6", "Supply Rate");
+        colMap.put("7", "Installation Rate");
+        colMap.put("8", "Amount");
+        colMap.put("9", "Remarks");
+
+        // 5. Add records to worksheet API
         for each sheetName in sheetNamesList
         {
             sheetRows = jsonMap.get(sheetName);
-            cellUpdates = List();
+            rowUpdates = List();
 
             for each rowData in sheetRows
             {
                 if(rowData.containKey("row_index"))
                 {
-                    rowIndex = rowData.get("row_index").toNumber();
                     keysList = rowData.keys();
+                    rowObj = Map();
 
                     for each key in keysList
                     {
                         if(key.startsWith("col_"))
                         {
                             colIndexStr = key.remove("col_");
-                            colIndex = colIndexStr.toNumber();
                             val = rowData.get(key);
 
-                            cellObj = Map();
-                            cellObj.put("worksheet_name", sheetName);
-                            cellObj.put("content", val);
-                            cellObj.put("row", rowIndex);
-                            cellObj.put("column", colIndex);
-
-                            cellUpdates.add(cellObj);
+                            if(colMap.containKey(colIndexStr))
+                            {
+                                headerName = colMap.get(colIndexStr);
+                                rowObj.put(headerName, val);
+                            }
                         }
+                    }
+                    if(rowObj.size() > 0)
+                    {
+                        rowUpdates.add(rowObj);
                     }
                 }
             }
 
-            // Chunk cell updates to respect the 50 cell limit per API call
-            chunkSize = 50;
-            currentChunk = List();
+            // Chunk row updates to respect API limits (max 1000 records per call)
+            chunkSize = 1000;
+            currentChunkStr = "[";
+            chunkCount = 0;
 
-            for each cellObj in cellUpdates
+            for each rowObj in rowUpdates
             {
-                currentChunk.add(cellObj);
-
-                if(currentChunk.size() >= chunkSize)
+                if(chunkCount > 0)
                 {
+                    currentChunkStr = currentChunkStr + ",";
+                }
+
+                // Build robust JSON string for map without using native .toString()
+                rowJsonStr = "{";
+                keyCount = 0;
+                for each headerKey in rowObj.keys()
+                {
+                    if(keyCount > 0)
+                    {
+                        rowJsonStr = rowJsonStr + ",";
+                    }
+                    valStr = rowObj.get(headerKey).toString();
+                    // Escape backslashes, newlines, and quotes
+                    valStr = valStr.replaceAll("\\", "\\\\");
+                    valStr = valStr.replaceAll("\n", "\\n");
+                    valStr = valStr.replaceAll("\r", "\\r");
+                    valStr = valStr.replaceAll("\"", "\\\"");
+                    rowJsonStr = rowJsonStr + "\"" + headerKey + "\":\"" + valStr + "\"";
+                    keyCount = keyCount + 1;
+                }
+                rowJsonStr = rowJsonStr + "}";
+
+                currentChunkStr = currentChunkStr + rowJsonStr;
+                chunkCount = chunkCount + 1;
+
+                if(chunkCount >= chunkSize)
+                {
+                    currentChunkStr = currentChunkStr + "]";
                     setParams = Map();
-                    setParams.put("method", "cells.content.set");
-                    // Convert list to string manually to avoid parsing issues in invokeurl POST body
-                    setParams.put("data", currentChunk.toString());
+                    setParams.put("method", "worksheet.records.add");
+                    setParams.put("worksheet_name", sheetName);
+                    setParams.put("header_row", 6);
+                    setParams.put("json_data", currentChunkStr);
 
                     setResp = invokeurl
                     [
@@ -123,17 +210,21 @@ if(wbResponse.containKey("resource_id"))
                         parameters: setParams
                         connection: "zohosheet_connection"
                     ];
-                    info "Set Cells Resp for " + sheetName + " (chunk): " + setResp;
-                    currentChunk = List();
+                    info "Add Records Resp for " + sheetName + " (chunk): " + setResp;
+                    currentChunkStr = "[";
+                    chunkCount = 0;
                 }
             }
 
-            // Process any remaining cells in the last chunk
-            if(currentChunk.size() > 0)
+            // Process any remaining rows in the last chunk
+            if(chunkCount > 0)
             {
+                currentChunkStr = currentChunkStr + "]";
                 setParams = Map();
-                setParams.put("method", "cells.content.set");
-                setParams.put("data", currentChunk.toString());
+                setParams.put("method", "worksheet.records.add");
+                setParams.put("worksheet_name", sheetName);
+                setParams.put("header_row", 6);
+                setParams.put("json_data", currentChunkStr);
 
                 setResp = invokeurl
                 [
@@ -142,7 +233,7 @@ if(wbResponse.containKey("resource_id"))
                     parameters: setParams
                     connection: "zohosheet_connection"
                 ];
-                info "Set Cells Resp for " + sheetName + " (final chunk): " + setResp;
+                info "Add Records Resp for " + sheetName + " (final chunk): " + setResp;
             }
         }
     }
