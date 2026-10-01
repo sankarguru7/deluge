@@ -83,25 +83,24 @@ if(wbResponse.containKey("resource_id"))
 
         for each sheetName in sheetNamesList
         {
-            // Build JSON string manually to avoid toString issues
-            headerJsonStr = "[";
-            cellCount = 0;
+            // Prepare a specific list of maps for this sheet to ensure correct JSON serialization
+            sheetHeaderCells = List();
             for each cell in headerCells
             {
-                if(cellCount > 0)
-                {
-                    headerJsonStr = headerJsonStr + ",";
-                }
                 colNum = cell.get("column");
                 contentVal = cell.get("content");
-                headerJsonStr = headerJsonStr + "{\"row\":6,\"column\":" + colNum + ",\"worksheet_name\":\"" + sheetName + "\",\"content\":\"" + contentVal + "\"}";
-                cellCount = cellCount + 1;
+
+                cellObj = Map();
+                cellObj.put("row", 6);
+                cellObj.put("column", colNum);
+                cellObj.put("worksheet_name", sheetName);
+                cellObj.put("content", contentVal);
+                sheetHeaderCells.add(cellObj);
             }
-            headerJsonStr = headerJsonStr + "]";
 
             headerParams = Map();
             headerParams.put("method", "cells.content.set");
-            headerParams.put("data", headerJsonStr);
+            headerParams.put("data", sheetHeaderCells.toString());
 
             headerResp = invokeurl
             [
@@ -171,7 +170,7 @@ if(wbResponse.containKey("resource_id"))
                     currentChunkStr = currentChunkStr + ",";
                 }
 
-                // Build robust JSON string for map without using native .toString()
+                // Build robust JSON string for map, properly escaping special characters
                 rowJsonStr = "{";
                 keyCount = 0;
                 for each headerKey in rowObj.keys()
@@ -181,11 +180,14 @@ if(wbResponse.containKey("resource_id"))
                         rowJsonStr = rowJsonStr + ",";
                     }
                     valStr = rowObj.get(headerKey).toString();
-                    // Escape backslashes, newlines, and quotes
-                    valStr = valStr.replaceAll("\\", "\\\\");
+
+                    // Escape backslashes, newlines, carriage returns, and double quotes
+                    // In Deluge string literals, "\\\\" resolves to "\\" for the regex engine, matching a literal "\"
+                    valStr = valStr.replaceAll("\\\\", "\\\\\\\\");
                     valStr = valStr.replaceAll("\n", "\\n");
                     valStr = valStr.replaceAll("\r", "\\r");
                     valStr = valStr.replaceAll("\"", "\\\"");
+
                     rowJsonStr = rowJsonStr + "\"" + headerKey + "\":\"" + valStr + "\"";
                     keyCount = keyCount + 1;
                 }
