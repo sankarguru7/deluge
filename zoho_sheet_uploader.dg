@@ -1,0 +1,153 @@
+// JSON Data Input (Assume this is passed as an argument or fetched)
+// In a real function, 'jsonDataStr' could be a string argument.
+jsonDataStr = "{\"Uncategorized\":[{\"row_index\":1,\"col_1\":\"Description: HVAC Bill of Materials\"},{\"row_index\":2,\"col_1\":\"* This BOQ is for preliminary estimation only...\"}], \"VRF System\":[{\"row_index\":7,\"col_1\":\"1\",\"col_2\":\"VRF SYSTEM - Heat pump system\",\"col_9\":\"VRF System\"}]}";
+jsonMap = jsonDataStr.toMap();
+workbookName = "HVAC_BOQ";
+
+// 1. Create Workbook
+createUrl = "https://sheet.zoho.in/api/v2/create";
+createParams = Map();
+createParams.put("method", "workbook.create");
+createParams.put("workbook_name", workbookName);
+
+wbResponse = invokeurl
+[
+    url: createUrl
+    type: POST
+    parameters: createParams
+    connection: "zohosheet_connection"
+];
+
+info "Create Workbook Response: " + wbResponse;
+
+if(wbResponse.containKey("resource_id"))
+{
+    resourceId = wbResponse.get("resource_id");
+    defaultSheetName = ifnull(wbResponse.get("worksheet_name"), "Sheet1");
+
+    sheetNamesList = jsonMap.keys();
+
+    if(sheetNamesList.size() > 0)
+    {
+        firstSheetName = sheetNamesList.get(0);
+
+        // 2. Rename Default Sheet
+        renameUrl = "https://sheet.zoho.in/api/v2/" + resourceId;
+        renameParams = Map();
+        renameParams.put("method", "worksheet.rename");
+        renameParams.put("old_name", defaultSheetName);
+        renameParams.put("new_name", firstSheetName);
+
+        renameResp = invokeurl
+        [
+            url: renameUrl
+            type: POST
+            parameters: renameParams
+            connection: "zohosheet_connection"
+        ];
+        info "Rename Sheet Resp: " + renameResp;
+
+        // 3. Create Additional Sheets
+        for each index i in sheetNamesList
+        {
+            if (i > 0)
+            {
+                sheetName = sheetNamesList.get(i);
+                insertParams = Map();
+                insertParams.put("method", "worksheet.insert");
+                insertParams.put("worksheet_name", sheetName);
+
+                insertResp = invokeurl
+                [
+                    url: renameUrl
+                    type: POST
+                    parameters: insertParams
+                    connection: "zohosheet_connection"
+                ];
+                info "Insert Sheet Resp for " + sheetName + ": " + insertResp;
+            }
+        }
+
+        // 4. Set Cells Content
+        for each sheetName in sheetNamesList
+        {
+            sheetRows = jsonMap.get(sheetName);
+            cellUpdates = List();
+
+            for each rowData in sheetRows
+            {
+                if(rowData.containKey("row_index"))
+                {
+                    rowIndex = rowData.get("row_index").toNumber();
+                    keysList = rowData.keys();
+
+                    for each key in keysList
+                    {
+                        if(key.startsWith("col_"))
+                        {
+                            colIndexStr = key.remove("col_");
+                            colIndex = colIndexStr.toNumber();
+                            val = rowData.get(key);
+
+                            cellObj = Map();
+                            cellObj.put("worksheet_name", sheetName);
+                            cellObj.put("content", val);
+                            cellObj.put("row", rowIndex);
+                            cellObj.put("column", colIndex);
+
+                            cellUpdates.add(cellObj);
+                        }
+                    }
+                }
+            }
+
+            // Chunk cell updates to respect the 50 cell limit per API call
+            chunkSize = 50;
+            currentChunk = List();
+
+            for each cellObj in cellUpdates
+            {
+                currentChunk.add(cellObj);
+
+                if(currentChunk.size() >= chunkSize)
+                {
+                    setParams = Map();
+                    setParams.put("method", "cells.content.set");
+                    // Convert list to string manually to avoid parsing issues in invokeurl POST body
+                    setParams.put("data", currentChunk.toString());
+
+                    setResp = invokeurl
+                    [
+                        url: renameUrl
+                        type: POST
+                        parameters: setParams
+                        connection: "zohosheet_connection"
+                    ];
+                    info "Set Cells Resp for " + sheetName + " (chunk): " + setResp;
+                    currentChunk = List();
+                }
+            }
+
+            // Process any remaining cells in the last chunk
+            if(currentChunk.size() > 0)
+            {
+                setParams = Map();
+                setParams.put("method", "cells.content.set");
+                setParams.put("data", currentChunk.toString());
+
+                setResp = invokeurl
+                [
+                    url: renameUrl
+                    type: POST
+                    parameters: setParams
+                    connection: "zohosheet_connection"
+                ];
+                info "Set Cells Resp for " + sheetName + " (final chunk): " + setResp;
+            }
+        }
+    }
+}
+else
+{
+    info "Error: Failed to create workbook. Check response.";
+}
