@@ -69,7 +69,7 @@ if(wbResponse.containKey("resource_id"))
             sheetIndex = sheetIndex + 1;
         }
 
-        // 4. Set Header Row (Row 6) using cells.content.set with manual JSON build
+        // 4. Set Header Row (Row 6) using cells.content.set with native map serialization wrapper
         headerCells = List();
         headerCells.add({"column":1, "content":"S. No"});
         headerCells.add({"column":2, "content":"Description"});
@@ -83,21 +83,27 @@ if(wbResponse.containKey("resource_id"))
 
         for each sheetName in sheetNamesList
         {
-            // Build JSON string manually to avoid toString issues
-            headerJsonStr = "[";
-            cellCount = 0;
+            sheetHeaderCells = List();
             for each cell in headerCells
             {
-                if(cellCount > 0)
-                {
-                    headerJsonStr = headerJsonStr + ",";
-                }
                 colNum = cell.get("column");
                 contentVal = cell.get("content");
-                headerJsonStr = headerJsonStr + "{\"row\":6,\"column\":" + colNum + ",\"worksheet_name\":\"" + sheetName + "\",\"content\":\"" + contentVal + "\"}";
-                cellCount = cellCount + 1;
+
+                cellObj = Map();
+                cellObj.put("row", 6);
+                cellObj.put("column", colNum);
+                cellObj.put("worksheet_name", sheetName);
+                cellObj.put("content", contentVal);
+                sheetHeaderCells.add(cellObj);
             }
-            headerJsonStr = headerJsonStr + "]";
+
+            // Extract properly escaped JSON array string by wrapping in a map and slicing
+            wrapper = Map();
+            wrapper.put("d", sheetHeaderCells);
+            wrapperStr = wrapper.toString();
+            startIndex = wrapperStr.indexOf("[");
+            endIndex = wrapperStr.lastIndexOf("]");
+            headerJsonStr = wrapperStr.subString(startIndex, endIndex + 1);
 
             headerParams = Map();
             headerParams.put("method", "cells.content.set");
@@ -150,33 +156,21 @@ if(wbResponse.containKey("resource_id"))
 
             // Chunk cell updates to respect the 50 cell limit per API call
             chunkSize = 50;
-            currentChunkStr = "[";
-            chunkCount = 0;
+            currentChunk = List();
 
             for each cellObj in cellUpdates
             {
-                if(chunkCount > 0)
+                currentChunk.add(cellObj);
+
+                if(currentChunk.size() >= chunkSize)
                 {
-                    currentChunkStr = currentChunkStr + ",";
-                }
+                    wrapper = Map();
+                    wrapper.put("d", currentChunk);
+                    wrapperStr = wrapper.toString();
+                    startIndex = wrapperStr.indexOf("[");
+                    endIndex = wrapperStr.lastIndexOf("]");
+                    currentChunkStr = wrapperStr.subString(startIndex, endIndex + 1);
 
-                cRow = cellObj.get("row");
-                cCol = cellObj.get("column");
-                cSheet = cellObj.get("worksheet_name");
-                cContent = cellObj.get("content").toString();
-
-                // Escape special characters to construct valid JSON
-                cContent = cContent.replaceAll("\\\\", "\\\\\\\\");
-                cContent = cContent.replaceAll("\n", "\\n");
-                cContent = cContent.replaceAll("\r", "\\r");
-                cContent = cContent.replaceAll("\"", "\\\"");
-
-                currentChunkStr = currentChunkStr + "{\"row\":" + cRow + ",\"column\":" + cCol + ",\"worksheet_name\":\"" + cSheet + "\",\"content\":\"" + cContent + "\"}";
-                chunkCount = chunkCount + 1;
-
-                if(chunkCount >= chunkSize)
-                {
-                    currentChunkStr = currentChunkStr + "]";
                     setParams = Map();
                     setParams.put("method", "cells.content.set");
                     setParams.put("data", currentChunkStr);
@@ -189,15 +183,20 @@ if(wbResponse.containKey("resource_id"))
                         connection: "zoho_sheet_connection"
                     ];
                     info "Set Cells Resp for " + sheetName + " (chunk): " + setResp;
-                    currentChunkStr = "[";
-                    chunkCount = 0;
+                    currentChunk = List();
                 }
             }
 
             // Process any remaining cells in the last chunk
-            if(chunkCount > 0)
+            if(currentChunk.size() > 0)
             {
-                currentChunkStr = currentChunkStr + "]";
+                wrapper = Map();
+                wrapper.put("d", currentChunk);
+                wrapperStr = wrapper.toString();
+                startIndex = wrapperStr.indexOf("[");
+                endIndex = wrapperStr.lastIndexOf("]");
+                currentChunkStr = wrapperStr.subString(startIndex, endIndex + 1);
+
                 setParams = Map();
                 setParams.put("method", "cells.content.set");
                 setParams.put("data", currentChunkStr);
