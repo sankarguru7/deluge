@@ -134,23 +134,26 @@ if(wbResponse.containKey("resource_id"))
             {
                 if(rowData.containKey("row_index"))
                 {
-                    keysList = rowData.keys();
                     rowObj = Map();
 
-                    for each key in keysList
+                    // Iterate through all expected columns to ensure every column has a value
+                    for each colIndexStr in colMap.keys()
                     {
-                        if(key.startsWith("col_"))
-                        {
-                            colIndexStr = key.remove("col_");
-                            val = rowData.get(key);
+                        headerName = colMap.get(colIndexStr);
+                        colKey = "col_" + colIndexStr;
 
-                            if(colMap.containKey(colIndexStr))
-                            {
-                                headerName = colMap.get(colIndexStr);
-                                rowObj.put(headerName, val);
-                            }
+                        if(rowData.containKey(colKey))
+                        {
+                            val = rowData.get(colKey);
+                            rowObj.put(headerName, val);
+                        }
+                        else
+                        {
+                            // Put default value '-' if missing
+                            rowObj.put(headerName, "-");
                         }
                     }
+
                     if(rowObj.size() > 0)
                     {
                         rowUpdates.add(rowObj);
