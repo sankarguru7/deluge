@@ -1,5 +1,0 @@
-import json
-
-data = json.loads('''{"Uncategorized":[{"row_index":1,"col_1":"Description: HVAC Bill of Materials"},{"row_index":2,"col_1":"* This BOQ is for preliminary estimation only. Vendor needs to site verify the all necessary requirements for the Installation of system and Quotation needs to updated accordingly"},{"row_index":4,"col_1":"* Billing to be made as per actual installed quantities"},{"row_index":5,"col_1":"HVAC BOQ"},{"row_index":41,"col_1":"1.3","col_2":"M.S Table Top type stand for installing VRF outdoor units duly epoxy coated with vibration isolators considering Fan platform and with MS angle support with axis ladder "},{"row_index":42,"col_1":"a","col_2":"VRF set 1: System design cooling capacity 18TR unit","col_4":"Lot","col_5":"1","col_8":"0"},{"row_index":58,"col_1":"2.2","col_2":"Treated Fresh Air Unit along with Outdoor unit"}], "VRF System": [{"row_index":7,"col_1":"1","col_2":"VRF SYSTEM - Heat pump system","col_9":"VRF System"}]}''')
-
-print(list(data.keys()))
