@@ -1,0 +1,205 @@
+void v4()
+{
+// JSON Data Input (Assume this is passed as an argument or fetched)
+// In a real function, 'jsonDataStr' could be a string argument.
+jsonDataStr = {"VRF System":{{"row_index":7,"col_1":"1","col_2":"VRF SYSTEM - Heat pump system","col_9":"VRF System"},{"row_index":8,"col_1":"1.1","col_2":"VRF Heat pump system including Outdoor & Indoor system shall be of Modulating capacity from 10%- 100%, with inverter based system, working on R-410A/R-407c/R-134a, including all the accessories","col_9":"VRF System"},{"row_index":9,"col_1":"1.2","col_2":"Notes :\n1. Outdoor units should deliver the designed cooled capacity at site Peak Ambient temperatures, including deration as per length of refrigerant piping. noteBelow mentioned capacities are actual required capacities.\n2. System should be suitable / withstand to operate satisfactorily under the site ambient conditions of 55 Deg C. \n3. The unit shall be factory charged & any top-up gas/oil required for first charge should be included in the unit installation quote. This shall include the nitrogen leak testing, oil charging, vaccumisation .\n4. The VRF outdoor units should be selected for 3-phase power supply (415 ± 10% & 50Hz + 5%)\nAll indoor units should be suitable for 230V AC(1-phase).\n5. Quote should include freight charges up to the site, along with Lifting Shifting Rigging of Outdoor & Indoor Units \n6. The unit shall meet latest ASHRAE 90.1 standard efficiency & BEE guidelines\n7. Complete System should be BMS/PLC compatible.","col_3":"1. Make: Daikin, Mitsubishi, LG, Bluestar - compatible for > 55 deg C \n2. Design cooling capacity shall be rated at peak outside conditions mentioned in BoQ\nOutdoor unit shall be 3 phase & Indoor unit 1 phase.\n3. Centralized controller with TFT LCD Touchscreen for both Indoor and Outdoor unit controlling along with RS-485 input and output","col_9":"VRF System"},{"row_index":10,"col_1":"A","col_2":"VRF Outdoor Unit ","col_9":"VRF System"},{"row_index":11,"col_1":"asa","col_2":"Supply, installation, testing & commissioning of VRF heat pumps - Outdoor units (heating + cooling) equipped with highly efficient inverter type scroll with special precoated High efficiency heat transfer Cooling Coil, low noise condenser fan with DC motor drive. interconnecting piping, suction line insulation etc, including all accessories along with Microprocessor control panel suitable for automatic operation, High speed calculation inverter control, active oil control mechanism incorporating all safety functions as per project requirement \nThe outdoor unit shall be a factory assembled unit housed in a sturdy weather proof casing constructed form rust-proofed mild steel panels coated with powder coated finish. unit shall have vibration isolators.\nMotor shall have Protection against thermal, overload, and voltage fluctuations.\nSITC quote should include the unit mounted starter panel complete with IP-55 protection consisting of Safety devices like High / Low Pressure Switch, Fan Motor Safety Thermostat, Over Current Relay, power disconnecting switches with fuses, Fusible Plugs, soft starters, for compressor motors, single phase preventers, communication card which can accept 4-20 mA or 2-10 Vdc analog signal. ","col_9":"VRF System"},{"row_index":12,"col_1":"aaa","col_2":"The SITC quote shall Include Refrigerant charge for the complete system","col_9":"VRF System"},{"row_index":13,"col_1":"aab","col_2":"The SITC quote shall Include centralized control system for VRF systems","col_9":"VRF System"},{"row_index":14,"col_1":"aac","col_2":"The SITC quote shall Include wired remote controller and wireless remote controller for unit operations","col_9":"VRF System"},{"row_index":15,"col_1":"i)","col_2":"Office Mezzanine G+1\nVRF-01\nSystem design cooling capacity 18 TR , Top Discharge, @ rated working conditions as below: \nRoom temperature 24 Deg C, < 60% RH\nOutside temperature 45 Deg C. \nunit should be able to operate at 55 Deg C\nCentralized controller with TFT LCD Touchscreen for both Indoor and Outdoor unit controlling along with RS-485 input and output along with complete control wiring as required for the complete controls of units\nNote:ODU unit shall be suitable for 24 hours operations.","col_4":"Lot","col_5":"1","col_8":"0","col_9":"VRF System","col_10":"42HP"},{"row_index":16,"col_1":"B","col_2":"VRF Indoor Unit ","col_9":"VRF System"}},"TFA":{{"row_index":37,"col_1":"iv)","col_2":"Treated Fresh Air Unit Connected with VRF Outdoor","col_9":"TFA"},{"row_index":38,"col_2":"Supply, installation, testing and commissioning ceiling suspended Treated Fresh air unit of following capacities. The unit shall be suitable for Indoor installation with double skin panel, filters, cooling coil, forward curved centrifugal type blower with direct driven motor, Insulated Drain pan, flexible canvas connection, supporting system, etc.\nTFAU unit shall be connected with VRF outdoor unit.","col_3":"1. Integrated with Office area VRF ODU units\n2. G4+F7 filters\n3. supply air temperature 22 Deg C","col_9":"TFA"},{"row_index":39,"col_2":"TFA unit shall be provided with Prefilter and Fine filter (F7)","col_9":"TFA"},{"row_index":40,"col_1":"a","col_2":"TFAU-01: \nCapacity: Supply / Fresh air Flow rate: 400 CFM (100% Fresh Air Unit) @ Ex. Static Pressure : 150 Pa\nSupply Air temperature: 22 Deg C","col_4":"Nos.","col_5":"1","col_8":"0","col_9":"TFA"}}};
+jsonMap = jsonDataStr.toMap();
+workbookName = "Flp4";
+
+// 1. Create Workbook
+createUrl = "https://sheet.zoho.in/api/v2/create";
+createParams = Map();
+createParams.put("method", "workbook.create");
+createParams.put("workbook_name", workbookName);
+
+wbResponse = invokeurl
+[
+    url: createUrl
+    type: POST
+    parameters: createParams
+    connection: "zoho_sheet_connection"
+];
+
+info "Create Workbook Response: " + wbResponse;
+
+if(wbResponse.containKey("resource_id"))
+{
+    resourceId = wbResponse.get("resource_id");
+    sheetApiUrl = "https://sheet.zoho.in/api/v2/" + resourceId;
+    defaultSheetName = ifnull(wbResponse.get("worksheet_name"), "Sheet1");
+
+    sheetNamesList = jsonMap.keys();
+
+    if(sheetNamesList.size() > 0)
+    {
+        firstSheetName = sheetNamesList.get(0);
+
+        // 2. Rename Default Sheet
+        renameParams = Map();
+        renameParams.put("method", "worksheet.rename");
+        renameParams.put("old_name", defaultSheetName);
+        renameParams.put("new_name", firstSheetName);
+
+        renameResp = invokeurl
+        [
+            url: sheetApiUrl
+            type: POST
+            parameters: renameParams
+            connection: "zoho_sheet_connection"
+        ];
+        info "Rename Sheet Resp: " + renameResp;
+
+        // 3. Create Additional Sheets
+        sheetIndex = 0;
+        for each sheetName in sheetNamesList
+        {
+            if (sheetIndex > 0)
+            {
+                insertParams = Map();
+                insertParams.put("method", "worksheet.insert");
+                insertParams.put("worksheet_name", sheetName);
+
+                insertResp = invokeurl
+                [
+                    url: sheetApiUrl
+                    type: POST
+                    parameters: insertParams
+                    connection: "zoho_sheet_connection"
+                ];
+                info "Insert Sheet Resp for " + sheetName + ": " + insertResp;
+            }
+            sheetIndex = sheetIndex + 1;
+        }
+
+        // 4. Set Header Row (Row 6) using cells.content.set with native map serialization wrapper
+        headerCells = List();
+        headerCells.add({"column":1, "content":"S. No"});
+        headerCells.add({"column":2, "content":"Description"});
+        headerCells.add({"column":3, "content":"Checklist"});
+        headerCells.add({"column":4, "content":"Unit "});
+        headerCells.add({"column":5, "content":"QTY"});
+        headerCells.add({"column":6, "content":"Supply Rate"});
+        headerCells.add({"column":7, "content":"Installation Rate"});
+        headerCells.add({"column":8, "content":"Amount"});
+        headerCells.add({"column":9, "content":"Remarks"});
+
+        for each sheetName in sheetNamesList
+        {
+            sheetHeaderCells = List();
+            for each cell in headerCells
+            {
+                colNum = cell.get("column");
+                contentVal = cell.get("content");
+
+                cellObj = Map();
+                cellObj.put("row", 6);
+                cellObj.put("column", colNum);
+                cellObj.put("worksheet_name", sheetName);
+                cellObj.put("content", contentVal);
+                sheetHeaderCells.add(cellObj);
+            }
+
+            // Extract properly escaped JSON array string by wrapping in a map and slicing
+            wrapper = Map();
+            wrapper.put("d", sheetHeaderCells);
+            wrapperStr = wrapper.toString();
+            startIndex = wrapperStr.indexOf("[");
+            endIndex = wrapperStr.lastIndexOf("]");
+            headerJsonStr = wrapperStr.subString(startIndex, endIndex + 1);
+
+            headerParams = Map();
+            headerParams.put("method", "cells.content.set");
+            headerParams.put("data", headerJsonStr);
+
+            headerResp = invokeurl
+            [
+                url: sheetApiUrl
+                type: POST
+                parameters: headerParams
+                connection: "zoho_sheet_connection"
+            ];
+            info "Header Row Set Resp for " + sheetName + ": " + headerResp;
+        }
+
+        // 5. Add records using worksheet.records.add
+        for each sheetName in sheetNamesList
+        {
+            sheetRows = jsonMap.get(sheetName);
+            dataJsonStr = "[";
+            rowCount = 0;
+
+            for each rowData in sheetRows
+            {
+                if(rowData.containKey("row_index"))
+                {
+                    if(rowCount > 0)
+                    {
+                        dataJsonStr = dataJsonStr + ",";
+                    }
+                    dataJsonStr = dataJsonStr + "{";
+
+                    colCount = 0;
+                    colsList = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+                    for each colNum in colsList
+                    {
+                        if(colCount > 0)
+                        {
+                            dataJsonStr = dataJsonStr + ",";
+                        }
+
+                        colKey = "col_" + colNum;
+                        valStr = "-";
+
+                        if(rowData.containKey(colKey))
+                        {
+                            valStr = rowData.get(colKey).toString();
+                        }
+
+                        // Escape special characters for robust JSON string
+                        valStr = valStr.replaceAll("\\\\", "\\\\\\\\");
+                        valStr = valStr.replaceAll("\n", "\\n");
+                        valStr = valStr.replaceAll("\r", "\\r");
+                        valStr = valStr.replaceAll("\"", "\\\"");
+
+                        headerName = "";
+                        if (colNum == 1) { headerName = "S. No"; }
+                        else if (colNum == 2) { headerName = "Description"; }
+                        else if (colNum == 3) { headerName = "Checklist"; }
+                        else if (colNum == 4) { headerName = "Unit "; }
+                        else if (colNum == 5) { headerName = "QTY"; }
+                        else if (colNum == 6) { headerName = "Supply Rate"; }
+                        else if (colNum == 7) { headerName = "Installation Rate"; }
+                        else if (colNum == 8) { headerName = "Amount"; }
+                        else if (colNum == 9) { headerName = "Remarks"; }
+
+                        dataJsonStr = dataJsonStr + "\"" + headerName + "\":\"" + valStr + "\"";
+                        colCount = colCount + 1;
+                    }
+                    dataJsonStr = dataJsonStr + "}";
+                    rowCount = rowCount + 1;
+                }
+            }
+            dataJsonStr = dataJsonStr + "]";
+
+            setParams = Map();
+            setParams.put("method", "worksheet.records.add");
+            setParams.put("worksheet_name", sheetName);
+            setParams.put("header_row", 6);
+            setParams.put("json_data", dataJsonStr);
+
+            setResp = invokeurl
+            [
+                url: sheetApiUrl
+                type: POST
+                parameters: setParams
+                connection: "zoho_sheet_connection"
+            ];
+            info "Add Records Resp for " + sheetName + ": " + setResp;
+        }
+    }
+}
+else
+{
+    info "Error: Failed to create workbook. Check response.";
+}
+}
